@@ -1,0 +1,51 @@
+#!/bin/bash
+# TODO: nerozdelovat soubor s obrazem
+#       kontrola - nejake hash   
+
+# UUID diskovych oddilu
+BOOT_UUID="098f5230-9616-4d5d-b512-3b2a0eab6818" # sda1 
+ROOT_UUID="a8261441-1b0f-477f-99b8-eda48c016bd9" # sda5
+HOME_UUID="d5ba1ab8-9999-40ee-aec4-20defbb822d0" # sda6
+# /dev/mapper/home: UUID="6773ccc6-ab6c-4d59-b420-746976e44a41"
+# WDIMAGE_UUID="29fe2ee0-5839-4d22-a2c5-7d9016edf266" # LABEL="wdimage"
+
+DEVBASEU="/dev/disk/by-uuid"
+BASENAME=`date '+%Y-%m-%d'`
+
+for IMAGE in boot root home; do
+  FILENAME="${BASENAME}.${IMAGE}.image"
+  if [ -e ${FILENAME:-huh} ]; then
+    echo "already have today's $IMAGE as $FILENAME";
+    continue;
+  fi
+
+  case $IMAGE in
+    boot) DEV="$DEVBASEU"/$BOOT_UUID;;
+    root) DEV="$DEVBASEU"/$ROOT_UUID;;
+    home) DEV="$DEVBASEU"/$HOME_UUID;
+          if [ ! -e $DEV ]; then
+            DEV=${DEV_HOME_I_KNOW:=huh};
+          fi
+  esac
+
+  if [ ! -e ${DEV:-huh} ]; then
+   echo "dont know where the $IMAGE is :( -- skipping"
+   continue
+  fi
+
+  case $IMAGE in
+    home) dd if=$DEV of=$FILENAME;;
+    *) partimage -z2 -b -d save $DEV $FILENAME;; 
+  esac
+
+  # DEBUG
+  # echo $IMAGE na $DEV > $FILENAME 
+
+done
+
+if [ -e .halt_please ]; then
+  echo "And now sometning completelly different ... it's ... the end."
+  rm .halt_please
+  sync
+  halt
+fi
