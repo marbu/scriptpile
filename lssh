@@ -1,0 +1,6 @@
+#!/bin/bash
+# nice for keeping track of multiple ssh connections (tunneling, ...)
+ps aux \
+| grep ssh \
+| grep -v grep \
+| awk '{ printf $2" "; for (i=11; i<=NF; i++) printf "%s ",$i; printf "\n" }'
