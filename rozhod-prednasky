@@ -1,0 +1,71 @@
+#!/bin/bash
+# by marbu, 2006
+# pretridi aktualni adresar a vyhovujici soubory nakopiruje/presune do adresare /data/prednasky
+
+# fce
+
+help() {
+        echo "Usage: rozhod-prednasky [-m] dir1 dir2 ...";
+        exit 1;
+}
+
+
+# pri nevyhovujicim vzoru vyhodi prazdny vyraz
+shopt -s nullglob;
+
+# inicilizace
+MOVE=false;
+seznam="/media/dvd";
+REPO="/home/shared/lectures/"
+
+# getopt
+while getopts hm VOLBA; do
+        case $VOLBA in
+                m)   MOVE=true;;
+                h)   help;;
+        esac
+done
+
+shift $(($OPTIND-1))
+
+if [ $# -eq 0 ]; then
+	# z dvd ale presouvat nebudem ani nahodou:)
+	MOVE=false;
+else
+	seznam=$*;
+fi
+
+# main
+
+for adr in $seznam; do
+
+	cd $adr;
+	echo "pracovni adresar: $adr"
+
+	for file in `echo [A-Z][A-Z]???\-*.avi`; do
+
+		#ziska z nazvu souboru kod predmetu
+		kod=`echo $file | awk -F- '{ print $1  }' `;
+
+		#pokud neexistuje adresar pro predmet, vytvori ho
+		if [ ! -d $REPO$kod ]; then
+			mkdir $REPO$kod;
+		fi
+
+		# soubor zkopiruje/presune do adresare predmetu
+		# pokud tam uz neni ;)
+		if  [ -e $REPO$kod/$file ]; then
+			echo soubor $file je uz v $kod obsazen;
+		else
+			if  $MOVE ; then
+				echo presouvam $file
+				mv $file $REPO$kod;
+			else
+				echo kopiruju $file
+				cp $file $REPO$kod;
+			fi
+		fi
+
+	done
+
+done
