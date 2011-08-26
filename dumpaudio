@@ -1,0 +1,80 @@
+#!/bin/bash
+# marbu's dumpaudio helper powered by ffmpeg
+
+show_help() {
+  echo -e "Usage: dumpaudio [-c codec] input-files\n"
+  echo """Options:
+  -c   codec to encode dumped stream with
+  -d   debug mode 
+  -h   this message"""
+}
+
+die() {
+  echo "error: $1" 1>&2
+  exit 1
+}
+
+guess_codec() {
+  ffmpeg -i ${FILE} 2>&1 | \
+  grep 'Stream.\+Audio:' | \
+  sed 's/^.*Stream #[0-9\.()a-z]\+: Audio: \([a-z0-9]\+\).*/\1/'
+}
+
+strip_suffix() {
+  echo $FILE | sed 's/\(.*\)\.[^\.]\+$/\1/'
+}
+
+do_dump() {
+  $DEBUG ffmpeg -i ${FILE} ${OPTIONAL} ${OUTFILE}
+}
+
+# just extract without encoding
+run_extract() {
+  OUTFILE="${STRIPPED}.${GUESSED}"
+  OPTIONAL="-acodec copy"
+  do_dump
+}
+
+run_convert() {
+  OUTFILE="${STRIPPED}.${CODEC}"
+  do_dump
+}
+
+run_dump() {
+  FILE=$1 # input audio file
+  GUESSED=$(guess_codec)
+  STRIPPED=$(strip_suffix)
+  if [[ ! $CODEC ]]; then
+    run_extract
+    return
+  fi
+  if [[ $CODEC = $GUESSED ]]; then
+    run_extract
+  else
+    run_convert 
+  fi
+}
+
+#
+# main
+#
+
+if [[ $# = 0 ]]; then
+  show_help
+  exit
+fi
+
+while getopts "dhc:" OPT; do
+  case $OPT in
+    d)    DEBUG=echo;;
+    c)    CODEC=$OPTARG;;
+    h)    show_help;
+          exit;;
+  esac
+done
+
+shift $(($OPTIND-1))
+
+for i in $@; do
+  run_dump "$i"
+done

@@ -1,0 +1,15 @@
+#!/bin/bash
+# just quick&dirty
+
+[[ $# -eq 0 ]] && exit
+
+cd ~/data/video
+
+for i; do
+  NAME=$(
+    youtube-dl "$i" |
+    sed -n '/^\[download\]\ Destination:\ /s!\[download\]\ Destination:\ \(.*\)$!\1!p'
+  )
+  dumpaudio -c mp3 "$NAME"
+  rm $NAME
+done
