@@ -1,0 +1,13 @@
+#!/bin/bash
+
+show_help() {
+  echo "Usage: who-owns <name-of-executable>"
+  exit
+}
+
+[[ $1 ]] || show_help
+
+{ for i in $(which -a $1); do
+  rpm -q -f $i || \
+  pacman -Qo $i
+done } 2> /dev/null

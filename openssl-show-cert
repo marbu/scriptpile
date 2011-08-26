@@ -1,0 +1,7 @@
+#!/bin/bash
+HOST="$1"
+PORT=443
+CERTFILE=$(mktemp /tmp/ssl.XXXXXXXXXXXX)
+cat /dev/null | openssl s_client -connect $HOST:$PORT > $CERTFILE 2> /dev/null
+openssl x509 -noout -in $CERTFILE -fingerprint
+rm $CERTFILE

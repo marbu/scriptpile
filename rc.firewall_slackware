@@ -1,0 +1,32 @@
+#!/bin/sh
+# /etc/rc.d/rc.ip_firewall (very old one)
+
+## DEFAULT (zakazeme vsechno az na OUTPUT)
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# propusti pouze 4 SYN segmenty/sec (ochrana pred SYN floods)
+iptables -N syn-flood
+iptables -A syn-flood -m limit --limit 20/s --limit-burst 5 -j RETURN
+iptables -A syn-flood -j DROP
+
+## INPUT
+
+# povolime loopback
+iptables -A INPUT -i lo -j ACCEPT
+
+# stav. firewall
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Odfiltrovat pokusy o syn-flooding
+iptables -A INPUT -i eth0  -p tcp --syn -j syn-flood
+
+## SLUZBY
+
+# ssh
+iptables -A INPUT -i eth0  -p TCP --dport 22 -j ACCEPT
+
+# DC++
+# $IPTABLES -A INPUT -p tcp --dport 9176 -j ACCEPT
+# $IPTABLES -A INPUT -p udp --dport 9176 -j ACCEPT
