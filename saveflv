@@ -1,0 +1,19 @@
+#!/bin/bash
+# note: no logner works
+
+shopt -s extglob
+cd /var/tmp
+
+for i in /tmp/Flash!(*flv); do
+  [[ $i == '/tmp/Flash!(*flv)' ]] && break
+  NAME=${i#/tmp/}
+  if ! [[ -f ${NAME}.flv ]]; then
+    ln $i $NAME.flv;
+    echo $i linked
+  fi
+done
+
+# listing
+if [[ $1 = "-l" ]]; then
+  ls /var/tmp/*.flv
+fi

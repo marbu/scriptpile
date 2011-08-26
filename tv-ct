@@ -1,0 +1,128 @@
+#!/bin/bash
+# marbu's czech tv mplayer script
+# since 2011 stopped working because of flash transition
+
+# settings
+LOGDIR="$HOME/.var"
+STREAMDIR="$HOME/data/video/tv_stream"
+
+LOGFILE="$LOGDIR/tv-ct.log"
+
+show_help() {
+  echo -e "Usage: tv-ct <command> [command-options]\n"
+  echo """Commands:
+  play    play stream     (options: --cache)
+  dump    download stream (options: --name)
+  log     show log of opened urls
+  help    this message"""
+}
+
+die() {
+  log $1
+  echo "error: $1" 1>&2
+  exit 1
+}
+
+log() {
+  DATE=$(date +%Y-%m-%d-%H:%M)
+  echo "$DATE $@" >> $LOGFILE
+}
+
+show_log() {
+  sed '/get url:/s/get\ url:\ //' $LOGFILE
+}
+
+get_playlist() {
+  if [[ "$1" =~ ^.*http://www.ceskatelevize.cz/.*$ ]]; then
+    log "get url: $1"
+  else
+    die "bad url: $1"
+  fi
+  
+  PLAYLIST_URL=$( wget "$1" -O - 2>/dev/null | \
+    fgrep 'src="http://ctdir.visual.cz/iVysilani/Services/Streaming/' | \
+    sed 's/^.*src=\"//' | \
+    sed 's/\"$//'
+  )
+
+  if [[ ! $PLAYLIST_URL ]]; then
+    die "playlist url fetch failed"
+  fi
+
+  # fetch pristine playlist
+  PLAYLIST=$(mktemp)
+  wget --user-agent 'NSPlayer/0 (MPlayer; Linux)' $PLAYLIST_URL -O $PLAYLIST
+
+  # remove commercials from playlist (mplayer can download only the first entry)
+  sed -i 's/<ENTRY/\n&/g;s/ENTRY>/&\n/g' $PLAYLIST
+  sed -i '/reklama\|upoutavky/d' $PLAYLIST
+}
+
+inc_number_name() {
+  BASE="${DUMPFILE%.wmv}"
+  N=1
+  while [[ -e "${BASE}-${N}.wmv" ]]; do
+    : $((N++))
+  done
+  DUMPFILE="${BASE}-${N}.wmv"
+}
+
+init_download() {
+  # get stream id
+  CNAME=$(sed -n 's/^<REF.*CONTENT_NAME=\([0-9]\+\)\&.*/\1/p' $PLAYLIST)
+  NAME=$(sed -n 's/^<REF.*NAZEV=\([a-z-]\+\)\&.*/\1/p' $PLAYLIST)
+
+  # get filename
+  DUMPFILE="${STREAMDIR}/${NAME}.${CNAME}.wmv"
+  if [[ -e $DUMPFILE ]]; then
+    inc_number_name
+  fi
+  
+  DOWNLOAD="-dumpstream -dumpfile $DUMPFILE"
+}
+
+run_mplayer() {
+  $DEBUG mplayer $DOWNLOAD \
+    -playlist "$PLAYLIST" \
+    -user-agent 'NSPlayer/0 (MPlayer; Linux)' \
+    #>& /dev/null
+}
+
+cleanup() {
+  if [[ $DOWNLOAD ]]; then
+    $DEBUG rm $PLAYLIST
+    echo $DUMPFILE
+  fi
+}
+
+run() {
+  URL=$1
+  get_playlist "$URL"
+  [[ $2 ]] && init_download
+  run_mplayer
+  cleanup
+}
+
+#
+# main
+#
+
+if [[ $# = 0 ]]; then
+  show_help
+  exit
+fi
+
+# debug mode
+if [[ $1 = "-d" ]]; then
+  DEBUG=echo
+  shift
+fi
+
+case $1 in
+  dump)    run $2 dump;;
+  play)    run $2;;
+  help)    show_help;;
+  *http://www.ceskatelevize.cz/*) run $1 dump;;
+  log)     show_log;;
+  *)       show_help;;
+esac
