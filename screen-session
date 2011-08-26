@@ -1,0 +1,155 @@
+#!/bin/bash
+# by marbu, 2010
+
+# TODO:
+# * specifiing name of screen session and stored session, checking
+# * force flag
+# * detach flag
+
+SCREEN_DEF_CONFIG="$HOME/.screenrc" # default conf. file of screen 
+SESSION_DIR="$HOME/.screen"         # where the session files are stored
+
+# configuration of the wrapper screen
+WRAP_CONF="/dev/null"               # just ignore the default config file
+WRAP_SESSION="screen-wrapper" 
+
+MYSELF=$(basename $0)
+
+help() {
+  echo -e "quick and dirty screen session manager\n"
+  echo -e "Usage: $MYSELF <command> session_name\n"
+  echo """Commands:
+  list          show list of strored sessions
+  open [opts]   restore screen session (opts: --less)
+  save          save screen session
+  rm            remove saved session
+  help          this text
+"""
+}
+
+test_session_exists() {
+  screen -ls "$1" | \
+  grep "[0-9]\+\.$1[^a-z0-9]\+(.*)" 2>&1 > /dev/null
+  RES=$?
+  if [[ $RES -ne 0 ]]; then
+    echo "session $1 does not exists"
+    exit 1
+  fi
+}
+
+print_window() {
+  WIN=$1
+  DIR=$2
+  echo "chdir $DIR"
+  echo "screen -t $WIN"
+}
+
+save_session() {
+  TARGET_SESSION="$1"
+  test_session_exists $TARGET_SESSION
+  SESSION_FILE=$SESSION_DIR/$TARGET_SESSION.screen-conf
+
+  if [[ -e $SESSION_FILE ]]; then
+    echo "session $TARGET_SESSION already exists, use -f to overwrite"
+    exit 1
+  fi
+
+  TEMPFILE=$(mktemp /tmp/wrapper.XXXXXXXX)
+
+  # create screen wrapper screen session
+  screen -dmS $WRAP_SESSION -c $WRAP_CONF
+  # wait some time for bash to start
+  sleep 1 
+
+  # insert target screen session inside the wrapper one
+  screen -S $WRAP_SESSION -p 0 -X stuff "screen -x -S $TARGET_SESSION
+  "
+  # just in case
+  sleep 0.5
+
+  # hack: dump the windowslist
+  screen -S $TARGET_SESSION -X windowlist
+  screen -S $WRAP_SESSION -p 0 -X hardcopy $TEMPFILE
+
+  WINDOWS=$(awk '/^\ +[0-9]+\ / {print $2}' $TEMPFILE)
+
+  # initialize session config file
+  # do not include comments
+  sed -n '/^[^#]/p' $SCREEN_DEF_CONFIG  > $SESSION_FILE
+  echo -e "\n# windows" >> $SESSION_FILE
+
+  for WIN in $WINDOWS; do
+
+    > $TEMPFILE
+    # TODO: HACK: get the working dir. of window
+    screen -S $TARGET_SESSION -p $WIN -X stuff "pwd > $TEMPFILE
+    "
+
+    # TODO: can't continue without pwd file
+    while [[ ! -s $TEMPFILE ]]; do
+  	sleep 0.1;
+    done
+
+    DIR=$(cat $TEMPFILE)
+    print_window $WIN $DIR >> $SESSION_FILE
+  done
+
+  # cleanup
+  screen -S $WRAP_SESSION -p 0 -X kill
+  rm $TEMPFILE
+}
+
+open_session() {
+  TARGET_SESSION="$1"
+  SESSION_FILE=$SESSION_DIR/$TARGET_SESSION.screen-conf
+
+  if [[ ! -e $SESSION_FILE ]]; then
+    echo "session $TARGET_SESSION doesn't exists"
+    exit 1
+  fi
+
+  screen -S $TARGET_SESSION -c $SESSION_FILE
+
+#  if [[ $LESS ]]; then
+#  	#awk '/^#windows/,EOF' $SESSION_FILE | less
+#    less $SESSION_FILE
+#  else
+#    screen -S $TARGET_SESSION -c $SESSION_FILE
+#  fi
+
+}
+
+rm_session() {
+  TARGET_SESSION="$1"
+  SESSION_FILE=$SESSION_DIR/$TARGET_SESSION.screen-conf
+
+  if [[ ! -e $SESSION_FILE ]]; then
+    echo "session $TARGET_SESSION doesn't exists"
+    exit 1
+  fi
+
+  rm $SESSION_FILE
+}
+
+list_sessions() {
+  ls $SESSION_DIR/*.screen-conf 2> /dev/null | \
+  sed "s!\.screen-conf!!g;s!$SESSION_DIR\/!!g"
+}
+
+#
+# main
+#
+
+if [[ $# -eq 0 ]]; then
+  help
+  exit
+fi
+
+case $1 in
+  save)  save_session $2;;
+  rm|remove) rm_session $2;;
+  open|o)  open_session $2;;
+  list|-l|--list|ls)  list_sessions;;
+  help)  help;;
+  *)     help; exit 1;;
+esac

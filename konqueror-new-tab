@@ -1,0 +1,2 @@
+#!/bin/bash
+qdbus $(qdbus | grep konqueror | head -1) /konqueror/MainWindow_1 org.kde.Konqueror.MainWindow.newTab "$1" False

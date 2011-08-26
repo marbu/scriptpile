@@ -1,0 +1,137 @@
+#!/bin/bash
+# marbu rss reader wrapper
+
+# TODO:
+# * do not run rss more than once (pid tracking?)
+# * config: turn off/on noprocast
+# * add rss url (anytime)
+# * ask how much time are you willing to waste
+
+# noprocast filter settings (minutes)
+NOPROCAST="yes" 
+MAXVISIT=15
+MINAWAY=200
+
+LOGFILE="$HOME/local/var/rss.log"
+
+# rss reader
+RSS_NAME="akregator"
+RSS_BIN="/usr/bin/akregator"
+
+# browser
+BROWSER_NAME="chromium"
+BROWSER_BIN="/usr/bin/chromium"
+#BROWSER_NAME="firefox"
+#BROWSER_BIN="/usr/bin/firefox -P general -newtab"
+
+show_help() {
+  echo -e "marbu rss reader wrapper\n"
+  echo -e "Usage: rss <command> [args]\n"
+  echo """Commands:
+  run          run rss reader ($BROWSER_NAME)
+  open <url>   open given url in browser ($RSS_NAME)
+  stat         show time left
+  log          show log
+  url          filter only urls from log
+  help         this message
+"""
+}
+
+log() {
+  TIME=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "$TIME $1" >> $LOGFILE
+}
+
+run() {
+  filter run
+  log "$RSS_NAME started"
+  $RSS_BIN
+}
+
+open() {
+  filter open
+  log "$BROWSER_NAME opens $1"
+  $BROWSER_BIN $1
+}
+
+noprocast_alert() {
+  [[ $NOPROCAST ]] || return
+  echo $1
+  Xdialog --msgbox "$1" 100 100 2> /dev/null
+  exit
+}
+
+noprocast_wait() {
+  MSG="Hey! No more rss. Just do the work and wait $1 min."
+  noprocast_alert "$MSG"
+}
+
+noprocast_start() {
+  MSG="You have to start your client first to have any page opened."
+  noprocast_alert "$MSG"
+}
+
+filter() {
+  case $1 in
+    show) DEBUG="1";;
+    *)    TYPE=$1;;  # supporting run, open
+  esac
+
+  # TODO: find out why this line doesn't work: (escaping, shell or date problem?)
+  #LAST=$(awk '/.* started$/ { print $1,$2 }' $LOGFILE | tail -1 | date '+%s' -d -)
+
+  LAST=$(awk '/.* started$/ { print $1,$2 }' $LOGFILE | tail -1)
+  LAST=$(date '+%s' -d "$LAST")
+  NOW=$(date '+%s')
+
+  # min to sec
+  MAXVISIT=$(($MAXVISIT*60))
+  MINAWAY=$(($MINAWAY*60))
+
+  if [[ $(( $LAST + $MAXVISIT )) > $NOW ]]; then
+    LEFT=$((($LAST + $MAXVISIT - $NOW)/60)) 
+    [[ $DEBUG ]] && echo "you have $LEFT min"
+    return
+  fi
+
+  if [[ $(($LAST + $MAXVISIT)) < $NOW && $NOW < $(($LAST +$MINAWAY)) ]]; then
+    WAIT=$(( ($LAST + $MINAWAY - $NOW)/60 ))
+    [[ $DEBUG ]] && echo "wait $WAIT min" || noprocast_wait $WAIT
+    return
+  fi
+
+  [[ $DEBUG ]] && echo "you are free to start rss client"
+
+  # enforce shutdown of rss client: you are supposed to shut it down when stop
+  # reading => you have to restart it,
+  # if you are in 'free to begin' state but the client is still running
+  if [[ $TYPE = open ]]; then
+    noprocast_start
+  fi
+}
+
+show_log() {
+  #cut -d ' ' -f 2- $LOGFILE | less
+  less $LOGFILE
+}
+
+show_url() {
+  awk '/opens\ http/ { print $NF; }' $LOGFILE | less
+}
+
+# main
+
+if [[ $# = 0 ]]; then
+  run
+  exit
+fi
+
+case $1 in
+  run)    run;;
+  open)   [[ $2 ]] && open $2;;
+  stat)   filter show;;
+  log)    show_log;;
+  url)    show_url;;
+  help)   show_help;;
+  *)      show_help;;
+esac

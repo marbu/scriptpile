@@ -1,0 +1,51 @@
+#!/bin/bash
+# marbu's irc wrapper
+
+TUI_CLIENT="irssi"
+GUI_CLIENT="xchat"
+
+show_help() {
+  echo "Usage: irc <command>"
+  echo """Commands:
+  shell    run $TUI_CLIENT
+  screen   run $TUI_CLIENT inside screen
+  x        run $GUI_CLIENT
+  help     this message"""
+}
+
+run_tui() {
+  exec $TUI_CLIENT
+}
+
+run_screen() {
+  screen -S irc_wrapper -r || \
+  screen -S irc_wrapper -c ~/.screen/$TUI_CLIENT
+}
+
+run_gui() {
+  nohup $GUI_CLIENT 2>&1 >/dev/null &
+  exit
+}
+
+make_guess() {
+  if [[ $DISPLAY ]]; then
+    run_gui
+  else
+    run_tui
+  fi
+}
+
+# main
+export LANG=C
+
+if [[ $# = 0 ]]; then
+  make_guess
+fi
+
+case $1 in
+  s|shell|tui) run_tui;;
+  x|X|gui)   run_gui;;
+  sc|screen) run_screen;;
+  help)      show_help;;
+  *)         show_help;;
+esac
