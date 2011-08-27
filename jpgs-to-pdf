@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for i in *.jpg; do
+  convert $i ${i%.jpg}.part.pdf
+done
+
+pdftk *.part.pdf cat output result.pdf
+rm *.part.pdf
