@@ -18,7 +18,7 @@ run_tui() {
 }
 
 run_screen() {
-  screen -S irc_wrapper -r || \
+  screen -S irc_wrapper -x || \
   screen -S irc_wrapper -c ~/.screen/$TUI_CLIENT
 }
 
