@@ -12,7 +12,8 @@ import subprocess
 def sync(source, target, args):
     """run rsync"""
     print "syncing '%s' to '%s'" % (source, target)
-    cmd = "rsync -v -zc --archive --copy-links -e ssh %(source)s %(target)s " % locals()
+    cmd = "rsync -v -zc --archive --copy-links -e ssh %(source)s %(target)s " \
+        % locals()
     if args.debug:
         print cmd
     else:
@@ -33,7 +34,10 @@ def info(conf, args):
 
 def main():
     parser = ArgumentParser(description='Simple text sync tool using rsync.')
-    parser.add_argument('-d', dest='debug', action='store_true', help='debug mode')
+    parser.add_argument('-d',
+        dest='debug',
+        action='store_true',
+        help='debug mode')
     subparsers = parser.add_subparsers()
 
     # define subcommands
