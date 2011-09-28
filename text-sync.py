@@ -32,8 +32,15 @@ import subprocess
 def sync(source, target, args):
     """run rsync"""
     print "syncing '%s' to '%s'" % (source, target)
-    cmd = "rsync -v -zc --archive --copy-links -e ssh %(source)s %(target)s " \
-        % locals()
+    cmd = ("rsync"
+        " --verbose"
+        " --compress"
+        " --progress"
+        " --checksum"
+        " --archive"
+        " --copy-links"
+        " -e ssh %(source)s %(target)s"
+        ) % locals()
     if args.debug:
         print cmd
     else:
