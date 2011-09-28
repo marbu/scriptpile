@@ -17,6 +17,8 @@ remote = %(remote)s
 # add man config spec
 # add logging
 # add support for symlinked dirs
+# add support for multiple targets,
+#     rename 'dirs' in conf. to 'default'
 
 
 import sys
