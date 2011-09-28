@@ -1,0 +1,6 @@
+#!/bin/bash
+HOST="$1"
+CERTFILE=$(mktemp /tmp/ssh.XXXXXXXXXXXX)
+ssh-keyscan $HOST 2>&1 > $CERTFILE
+ssh-keygen -l -f $CERTFILE
+rm $CERTFILE
