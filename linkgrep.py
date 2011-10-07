@@ -6,13 +6,14 @@
 #  * non existent attr in template
 #  * UnicodeEncodeError
 #  * pipe exceptions
-#  * url handling
 
 
 import sys
 import os
 from optparse import OptionParser
 from BeautifulSoup import BeautifulSoup
+from urlparse import urlparse
+import urllib2
 
 
 def show_element(elem):
@@ -42,8 +43,15 @@ def process(file_obj, func):
         print func(i)
 
 def process_file(file_path, func):
+    url = urlparse(file_path)
     try:
-        fo = open(file_path, "r")
+        if url.scheme == '':
+            fo = open(file_path, "r")
+        elif url.scheme == 'file':
+            file_path = "/".join(filter(lambda x: x, [url.netloc, url.path]))
+            fo = open(file_path, "r")
+        else:
+            fo = urllib2.urlopen(file_path)
         process(fo, func)
         fo.close()
     except IOError, ex:
