@@ -55,17 +55,16 @@ def add_prefix_base(elem, base_url):
     elem.attrs = [tuple([x, y]) for x, y in attrs.iteritems()]
     return elem
 
-def process(file_obj, opts, base_url):
+def process(file_obj, opts):
     """ Find and process all links in file. """
     soup = BeautifulSoup(file_obj)
     for elem in soup("a"):
-        if base_url:
-            elem = add_prefix_base(elem, base_url)
+        if opts.base_url:
+            elem = add_prefix_base(elem, opts.base_url)
         print opts.func(elem)
 
 def process_file(file_path, opts):
     url = urlparse(file_path)
-    base_url = opts.base_url
     try:
         if url.scheme == '':
             file_obj = open(file_path, "r")
@@ -74,9 +73,9 @@ def process_file(file_path, opts):
             file_obj = open(file_path, "r")
         else:
             file_obj = urllib2.urlopen(file_path)
-            if opts.link_conv and base_url is None:
-                base_url = "%s://%s%s" % (url.scheme, url.netloc, url.path)
-        process(file_obj, opts, base_url)
+            if opts.link_conv and opts.base_url is None:
+                opts.base_url = "%s://%s%s" % (url.scheme, url.netloc, url.path)
+        process(file_obj, opts)
         file_obj.close()
     except IOError, ex:
         sys.stderr.write("IO error: %s\n" % ex)
