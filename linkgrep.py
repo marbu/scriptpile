@@ -1,8 +1,11 @@
 #!/usr/bin/env python2
 # -*- coding: utf8 -*-
 
+"""
+Simple script parsing html pages to filter out links.
+"""
+
 # TODO:
-#  * baseurl
 #  * non existent attr in template
 #  * UnicodeEncodeError
 #  * pipe exceptions
@@ -22,7 +25,7 @@ def show_element(elem):
 
 def show_pair(elem):
     """ Output text and url of the link. """
-    return '"%s" %s' % (elem.string, dict(elem.attrs).get('href'))
+    return '"%s" %s' % (elem.string, show_url(elem))
 
 def show_url(elem):
     """ Output just url of the link. """
@@ -36,14 +39,34 @@ def make_show(template):
         return template % attrs
     return show_func
 
-def process(file_obj, func):
+def add_prefix_base(elem, base_url):
+    """ Add base url prefix to achnor element. """
+    attrs = dict(elem.attrs)
+    href= attrs.get("href")
+    if href is None:
+        return elem
+    url = urlparse(href)
+    if url.scheme != "" or url.netloc != "":
+        return elem
+    if href.startswith("/"):
+        template = "%s%s"
+    else:
+        template = "%s/%s"
+    attrs["href"] = template % (base_url, href)
+    elem.attrs = [tuple([x, y]) for x, y in attrs.iteritems()]
+    return elem
+
+def process(file_obj, opts, base_url):
     """ Find and process all links in file. """
     soup = BeautifulSoup(file_obj)
-    for i in soup("a"):
-        print func(i)
+    for el in soup("a"):
+        if base_url:
+            el = add_prefix_base(el, base_url)
+        print opts.func(el)
 
-def process_file(file_path, func):
+def process_file(file_path, opts):
     url = urlparse(file_path)
+    base_url = opts.base_url
     try:
         if url.scheme == '':
             fo = open(file_path, "r")
@@ -52,7 +75,9 @@ def process_file(file_path, func):
             fo = open(file_path, "r")
         else:
             fo = urllib2.urlopen(file_path)
-        process(fo, func)
+            if opts.link_conv and base_url is None:
+                base_url = "%s://%s%s" % (url.scheme, url.netloc, url.path)
+        process(fo, opts, base_url)
         fo.close()
     except IOError, ex:
         sys.stderr.write("IO error: %s\n" % ex)
@@ -72,19 +97,28 @@ def main():
         const=show_pair,
         help="print pair text url",
         )
-    parser.add_option("-t", "--template",
+    parser.add_option("--template",
         action="store",
         help="output string template, eg. '%(text)s %(href)s'",
+        )
+    parser.add_option("-k", "--convert-links",
+        action="store_true",
+        dest="link_conv",
+        help="convert relative links to absolute",
+        )
+    parser.add_option("--base-url",
+        action="store",
+        help="set base url manually",
         )
     (opts, args) = parser.parse_args()
 
     if opts.template is not None:
         opts.func = make_show(opts.template)
     if len(args) == 0:
-        process(sys.stdin, opts.func)
+        process(sys.stdin, opts)
         return
     for arg in args:
-        process_file(arg, opts.func)
+        process_file(arg, opts)
 
 if __name__ == '__main__':
     main()
