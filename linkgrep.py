@@ -12,7 +12,6 @@ Simple script parsing html pages to filter out links.
 
 
 import sys
-import os
 from optparse import OptionParser
 from BeautifulSoup import BeautifulSoup
 from urlparse import urlparse
@@ -42,7 +41,7 @@ def make_show(template):
 def add_prefix_base(elem, base_url):
     """ Add base url prefix to achnor element. """
     attrs = dict(elem.attrs)
-    href= attrs.get("href")
+    href = attrs.get("href")
     if href is None:
         return elem
     url = urlparse(href)
@@ -59,26 +58,26 @@ def add_prefix_base(elem, base_url):
 def process(file_obj, opts, base_url):
     """ Find and process all links in file. """
     soup = BeautifulSoup(file_obj)
-    for el in soup("a"):
+    for elem in soup("a"):
         if base_url:
-            el = add_prefix_base(el, base_url)
-        print opts.func(el)
+            elem = add_prefix_base(elem, base_url)
+        print opts.func(elem)
 
 def process_file(file_path, opts):
     url = urlparse(file_path)
     base_url = opts.base_url
     try:
         if url.scheme == '':
-            fo = open(file_path, "r")
+            file_obj = open(file_path, "r")
         elif url.scheme == 'file':
             file_path = "/".join(filter(lambda x: x, [url.netloc, url.path]))
-            fo = open(file_path, "r")
+            file_obj = open(file_path, "r")
         else:
-            fo = urllib2.urlopen(file_path)
+            file_obj = urllib2.urlopen(file_path)
             if opts.link_conv and base_url is None:
                 base_url = "%s://%s%s" % (url.scheme, url.netloc, url.path)
-        process(fo, opts, base_url)
-        fo.close()
+        process(file_obj, opts, base_url)
+        file_obj.close()
     except IOError, ex:
         sys.stderr.write("IO error: %s\n" % ex)
 
