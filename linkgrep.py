@@ -7,6 +7,7 @@ Simple script parsing html pages to filter out links.
 
 # TODO:
 #  * non existent attr in template
+#  * \n in template doesn't work
 #  * UnicodeEncodeError
 #  * pipe exceptions
 

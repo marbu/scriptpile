@@ -19,6 +19,7 @@ remote = %(remote)s
 # add support for symlinked dirs
 # add support for multiple targets,
 #     rename 'dirs' in conf. to 'default'
+# add ignore files list
 
 
 import sys
