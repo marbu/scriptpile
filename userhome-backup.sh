@@ -3,7 +3,7 @@
 # by marbu, 2011
 
 # configuration (TODO: move outside)
-HOME_TO_BACKUP=/home/martin/
+HOME_TO_BACKUP=/mnt/snap_home/martin/
 REMOTE=scp://skoll/dione/martin/
 ENC_KEY=458EB91A
 SGN_KEY=4A354563
