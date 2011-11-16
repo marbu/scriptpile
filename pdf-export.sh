@@ -7,9 +7,9 @@ show_help() {
 }
 
 convert_to_pdf() {
-  FILE=$1
-  NAME=$(sed 's/\(.*\)\..*$/\1/' <<< $FILE)
-  if [[ ! -e $FILE ]]; then
+  FILE="$1"
+  NAME=$(sed 's/\(.*\)\..*$/\1/' <<< "$FILE")
+  if [[ ! -e "$FILE" ]]; then
     echo "$FILE doesn't exist" >&2
     $DEBUG return
   fi
@@ -18,7 +18,7 @@ convert_to_pdf() {
     $DEBUG return
   fi
   echo "converting $FILE" >&2
-  $DEBUG unoconv -f pdf $FILE
+  $DEBUG unoconv -f pdf "$FILE"
 }
 
 #
@@ -36,5 +36,5 @@ case $1 in
 esac
 
 for i; do
-  convert_to_pdf $i
+  convert_to_pdf "$i"
 done
