@@ -5,9 +5,9 @@
 DOWNLOAD_DIR=$HOME/Downloads/
 MUSIC_DIR=/home/shared/music/
 
-for i in ${DOWNLOAD_DIR}*www.jamendo.com*.zip; do
+for i in ${DOWNLOAD_DIR}*---\ Jamendo\ -*.zip; do
   TARGET="${i#$DOWNLOAD_DIR}"
-  if [[ $TARGET = "*www.jamendo.com*.zip" ]]; then
+  if [[ $TARGET = "*---\ Jamendo\ -*.zip" ]]; then
     echo "no jamendo archives found" >&2
     break
   fi
