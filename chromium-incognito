@@ -1,2 +1,2 @@
 #!/bin/bash
-chromium --incognito
+chromium --incognito || chromium-browser --incognito
