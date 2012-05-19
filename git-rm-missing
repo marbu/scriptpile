@@ -1,0 +1,27 @@
+#!/bin/bash
+# run 'git rm' for all files which has been deleted without
+# knowledge of the git
+
+show_help() {
+  echo -e "Usage: git rm-missing [regexp]\n"
+  echo """Arguments:
+  regexp  run 'git rm' only for matching filenames (optional)
+  help    show this message"""
+}
+
+git_rm() {
+  if [[ $1 ]]; then
+    git status -s | sed -n /^\ D\ /s/^...//p | grep "$1" | xargs git rm
+  else
+    git status -s | sed -n /^\ D\ /s/^...//p | xargs git rm
+  fi
+}
+
+#
+# main
+#
+
+case $1 in
+  -h|--help|help) show_help;;
+  *) git_rm "$1";;
+esac
