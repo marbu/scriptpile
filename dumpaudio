@@ -17,7 +17,7 @@ die() {
 guess_codec() {
   ffmpeg -i ${FILE} 2>&1 | \
   grep 'Stream.\+Audio:' | \
-  sed 's/^.*Stream #[0-9\.()a-z]\+: Audio: \([a-z0-9]\+\).*/\1/'
+  sed 's/^.*Stream #[0-9\.:()a-z]\+: Audio: \([a-z0-9]\+\).*/\1/'
 }
 
 strip_suffix() {
