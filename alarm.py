@@ -10,7 +10,7 @@ Following example:
 
 will do roughly this:
 
-    $ echo 'mpc clear; mpc search artist leslie | mpc add; mpc play' | at 20:05
+    $ echo 'mpc clear; mpc load alarm; mpc play' | at 20:05
     $ echo 'mpc volume 10' | at 20:05
     $ echo 'mpc volume 50' | at 20:25
     $ echo 'mpc volume 70' | at 20:45
@@ -26,7 +26,7 @@ from optparse import OptionParser
 from subprocess import check_output
 
 
-CMD_ALARM = "mpc clear; mpc search artist leslie | mpc add; mpc play"
+CMD_ALARM = "mpc clear; mpc load alarm; mpc play"
 CMD_VOLUME_UP = "mpc volume %d"
 CMD_ALARM_INIT_VOLUME = "%s; sleep 0.1; %s" % (CMD_ALARM, CMD_VOLUME_UP)
 
