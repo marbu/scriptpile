@@ -28,7 +28,6 @@ from subprocess import check_output
 
 CMD_ALARM = "mpc clear; mpc load alarm; mpc play"
 CMD_VOLUME_UP = "mpc volume %d"
-CMD_ALARM_INIT_VOLUME = "%s; sleep 0.1; %s" % (CMD_ALARM, CMD_VOLUME_UP)
 
 def run_at(time_str, sched_cmd, debug=False):
     """
@@ -52,16 +51,12 @@ def sched_alarm(when_str, volume_list=None, period=1, debug=False):
     # schedule alarm
     time_st  = time.strptime(when_str, "%H:%M")
     time_obj = datetime.datetime(2012, 1, 1, time_st.tm_hour, time_st.tm_min, 0)
-    if len(volume_list) == 0:
-        run_at(time_obj.strftime("%H:%M"), CMD_ALARM, debug)
-    else:
-        init_volume = volume_list.pop(0)
-        run_at(time_obj.strftime("%H:%M"), CMD_ALARM_INIT_VOLUME % init_volume, debug)
+    run_at(time_obj.strftime("%H:%M"), CMD_ALARM, debug)
     # gradually increase volume if required
     time_delta = datetime.timedelta(seconds=period*60)
     for volume in volume_list:
-        time_obj = time_obj + time_delta
         run_at(time_obj.strftime("%H:%M"), CMD_VOLUME_UP % volume, debug)
+        time_obj = time_obj + time_delta
 
 def main():
     op = OptionParser(usage="usage: %prog [options]")
