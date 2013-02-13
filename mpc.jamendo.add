@@ -1,44 +1,73 @@
 #!/bin/bash
-# marbu, 2008
-
-NAME=mpc.jamendo.add
-
-# Choose your encoding:
-#ENC="ogg1" # lowfi OGG (q-1)
-#ENC="ogg2" # lowfi OGG q4
-#ENC="ogg3" # hifi OGG q7
-ENC="mp31"  # lowfi MP3 (96kbits) (default for streaming)
+# by marbu, 2008, 2013
 
 BASE_URL="http://www.jamendo.com/"
 ALBUM_URL="${BASE_URL}get/track/id/album/audio/play/"
 TRACK_URL="${BASE_URL}get/track/id/track/audio/play/"
 
-if [[ $# -eq 0 ]]; then
-	echo "$NAME -- simple jamendo interface for mpd"
-	echo "usage: $NAME [-p] jamendo_url"
-    echo "options: -p play immediatelly, clears old playlist"
-	exit
+show_help() {
+  NAME=$(basename $0)
+  echo -e "$NAME -- simple MPD interface for jamendo.com\n"
+  echo "Usage: $NAME [-p] [-c codec] jamendo_url"
+  echo -e "\nOptions:"
+  echo "  -p play immediatelly, clears old playlist"
+  echo "  -c codec to use (mp3 or ogg)"
+  echo "  -d debug mode"
+  echo "  -h this message"
+}
+
+log()
+{
+  echo $1 >> $HOME/local/var/mpc-jamendo-add.log
+}
+
+mpd_add()
+{
+  URL="$1"
+  ENC="mp31"
+  case $CODEC in
+    ogg|ogg1) ENC="ogg1";; # lowfi OGG (q-1)
+    ogg2)     ENC="ogg2";; # lowfi OGG q4
+    mp3)      ENC="mp31";; # lowfi MP3 (96kbits) (default for streaming)
+  esac
+  if [[ "$URL" =~ ^${BASE_URL}.*/a([0-9]+)/?.*$ ]]; then
+    PLAYLIST_URL=${ALBUM_URL}${BASH_REMATCH[1]}${ENC:+&aue=$ENC}
+  elif [[ "$URL" =~ ^${BASE_URL}.*track/([0-9]+)/?.*$ ]]; then
+    PLAYLIST_URL=${TRACK_URL}${BASH_REMATCH[1]}${ENC:+&aue=$ENC}
+  else
+    echo "wrong URL: $URL" >&2
+    exit 1
+  fi
+  if [[ $DEBUG ]]; then
+    echo $PLAYLIST_URL
+  else
+    log "$PLAYLIST_URL"
+    [[ $PLAY ]] &&  mpc clear
+    wget -O - "$PLAYLIST_URL" | tee ~/local/var/jamendo.last.m3u \
+    | sed '/^#/d' | mpc add
+    [[ $PLAY ]] &&  mpc play
+  fi
+}
+
+#
+# main
+#
+
+if [[ $# = 0 ]]; then
+  show_help
+  exit
 fi
 
-if [[ "$1" == "-p" ]]; then
-	PLAY=1
-	shift
-fi
+while getopts "dpc:h" OPT; do
+  case $OPT in
+  d)  DEBUG=echo;;
+  p)  PLAY=1;;
+  c)  CODEC=$OPTARG;;
+  h)  show_help;
+      exit;;
+  esac
+done
 
-# logg
-echo $1 >> $HOME/local/var/mpc-jamendo-add.log
+shift $(($OPTIND-1))
 
-if [[ "$1" =~ ^${BASE_URL}.*album/([0-9]*)/?$ ]]; then
-	URL=${ALBUM_URL}${BASH_REMATCH[1]}${ENC:+&aue=$ENC}
-elif [[ "$1" =~ ^${BASE_URL}.*track/([0-9]*)/?$ ]]; then
-	URL=${TRACK_URL}${BASH_REMATCH[1]}${ENC:+&aue=$ENC}
-else
-	echo "wrong URL" >&2
-	exit 1
-fi
-
-[[ $PLAY ]] &&  mpc clear;
-wget -O - "$URL" | tee ~/local/var/jamendo.last.m3u | sed '/^#/d' | mpc add
-[[ $PLAY ]] &&  mpc play;
-
-exit
+mpd_add $1
