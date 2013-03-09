@@ -10,7 +10,7 @@ show_help() {
   echo -e "$NAME -- simple MPD interface for jamendo.com\n"
   echo "Usage: $NAME [-p] [-c codec] jamendo_url"
   echo -e "\nOptions:"
-  echo "  -p play immediatelly, clears old playlist"
+  echo "  -p play immediatelly (append to current playlist)"
   echo "  -c codec to use (mp3 or ogg)"
   echo "  -d debug mode"
   echo "  -h this message"
@@ -42,10 +42,10 @@ mpd_add()
     echo $PLAYLIST_URL
   else
     log "$PLAYLIST_URL"
-    [[ $PLAY ]] &&  mpc clear
+    [[ $PLAY ]] && POS_OLD=$(mpc playlist | wc -l)
     wget -O - "$PLAYLIST_URL" | tee ~/local/var/jamendo.last.m3u \
     | sed '/^#/d' | mpc add
-    [[ $PLAY ]] &&  mpc play
+    [[ $PLAY ]] && mpc play $(($POS_OLD+1))
   fi
 }
 
