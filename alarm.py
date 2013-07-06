@@ -102,7 +102,7 @@ def main():
         sys.stderr.write(msg)
         return 1
 
-    volume_list = [int(vol) for vol in opts.volume.split(",")]
+    volume_list = [int(vol) for vol in opts.volume.split(",") if vol]
     sched_alarm(time_obj, volume_list, opts.period, opts.debug)
 
 if __name__ == '__main__':
