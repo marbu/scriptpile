@@ -21,7 +21,7 @@ note: you can check the issued commands using --debug
 
 import sys
 import time
-import datetime
+from datetime import datetime, timedelta
 from optparse import OptionParser
 from subprocess import check_output
 
@@ -51,7 +51,7 @@ def sched_alarm(time_obj, volume_list=None, period=1, debug=False):
     # schedule alarm
     run_at(time_obj.strftime("%H:%M"), CMD_ALARM, debug)
     # gradually increase volume if required
-    time_delta = datetime.timedelta(seconds=period*60)
+    time_delta = timedelta(seconds=period*60)
     for volume in volume_list:
         run_at(time_obj.strftime("%H:%M"), CMD_VOLUME_UP % volume, debug)
         time_obj = time_obj + time_delta
@@ -63,10 +63,14 @@ def parse_time_spec(args):
     @param args: arg list from main
     @return    : time object (when to run the alarm)
     """
-    # TODO: support multiple timeformats
-    time_spec = args[0]
-    time_st  = time.strptime(time_spec, "%H:%M")
-    time_obj = datetime.datetime(2012, 1, 1, time_st.tm_hour, time_st.tm_min, 0)
+    if args[0] == "in":
+        now = datetime.now()
+        time_st = time.strptime(args[1], "%H:%M")
+        time_delta = timedelta(hours=time_st.tm_hour, minutes=time_st.tm_min)
+        time_obj = now + time_delta
+    else:
+        time_st = time.strptime(args[0], "%H:%M")
+        time_obj = datetime(1900, 1, 1, time_st.tm_hour, time_st.tm_min, 0)
     return time_obj
 
 def main():
@@ -88,9 +92,14 @@ def main():
     opts, args = op.parse_args()
 
     if len(args) > 0:
-        time_obj = parse_time_spec(args)
+        try:
+            time_obj = parse_time_spec(args)
+        except Exception, ex:
+            sys.stderr.write("Error: wrong time specification: %s.\n" % ex)
+            return 1
     else:
-        sys.stderr.write("Error: time not specified.\n")
+        msg = "Error: time not specified (the only mandatory argument).\n"
+        sys.stderr.write(msg)
         return 1
 
     volume_list = [int(vol) for vol in opts.volume.split(",")]
