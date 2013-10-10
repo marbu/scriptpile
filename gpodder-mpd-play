@@ -1,0 +1,43 @@
+#!/bin/bash
+
+show_help()
+{
+  echo "Usage: $(basename $0) [-d] <podcast-filepath>"
+}
+
+# translate filesystem path into path relative to mpd music dir
+get_mpd_path()
+{
+  # note: expecting PODCAST_DIR linked as "podcast" into mpd music dir
+  local PODCAST_DIR=/home/shared/podcast/
+  echo "podcast/${1#${PODCAST_DIR}}"
+}
+
+# just play the podcast via mpd
+play_podcast()
+{
+  POS_OLD=$(mpc playlist | wc -l)
+  $DEBUG mpc stop
+  $DEBUG mpc add "$(get_mpd_path $1)"
+  $DEBUG mpc play $(($POS_OLD+1))
+}
+
+#
+# main
+#
+
+if [[ $# = 0 ]]; then
+  show_help
+  exit
+fi
+
+# debug mode
+if [[ $1 = "-d" ]]; then
+  DEBUG=echo
+  shift
+fi
+
+case $1 in
+  -h|--help|help)  show_help;;
+  *)               play_podcast "$1";;
+esac
