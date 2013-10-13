@@ -4,7 +4,7 @@ while read VAL; do
    if [[ -z $VAL ]]; then
      continue
    fi
-   VAL=$(sed 's/,/./' <<< $VAL)
+   VAL=$(sed 's/,/./;s/ //g' <<< $VAL)
    SUM="$SUM + $VAL"
    SUM=$(bc <<< $SUM)
 done
