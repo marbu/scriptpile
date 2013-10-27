@@ -8,15 +8,14 @@ Simple script parsing html pages to filter out links.
 # TODO:
 #  * non existent attr in template
 #  * \n in template doesn't work
-#  * UnicodeEncodeError
-#  * pipe exceptions
 
 
 import sys
 from optparse import OptionParser
-from BeautifulSoup import BeautifulSoup
 from urlparse import urlparse
 import urllib2
+
+from BeautifulSoup import BeautifulSoup
 
 
 def show_element(elem):
@@ -62,7 +61,8 @@ def process(file_obj, opts):
     for elem in soup("a"):
         if opts.base_url:
             elem = add_prefix_base(elem, opts.base_url)
-        print opts.func(elem)
+        elem_str = unicode(opts.func(elem)) or u""
+        print elem_str.encode("utf8")
 
 def process_file(file_path, opts):
     url = urlparse(file_path)
