@@ -1,7 +1,12 @@
 #!/bin/bash
-# add effective username to the output of 'jps -l' command
+# add effective username to the output of 'jps' command
 
-jps -l | {
+if [[ "$1" =~ ^--?h(elp)?$ ]]; then
+  jps -help
+  exit
+fi
+
+jps $@ | {
 while read PID CLASS; do
   USER=$(ps -p $PID -o ruser | tail -1)
   # when the process already doesn't exists, USER contains 'RUSER' string
