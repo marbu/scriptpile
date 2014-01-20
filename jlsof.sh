@@ -9,6 +9,6 @@ fi
 
 lsof $@ | grep ^java | {
 while read IGNORE PID REST; do
-	CLASS=$(jps | grep "^${PID}\ " | cut -d' ' -f2)
-	echo $CLASS $PID $REST
+  CLASS=$(jps | grep "^${PID}\ " | cut -d' ' -f2)
+  echo $CLASS $PID $REST
 done; }
