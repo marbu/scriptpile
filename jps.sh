@@ -13,4 +13,4 @@ while read PID CLASS; do
   if [[ $USER != "RUSER" ]]; then
     echo -e "$PID\t$USER\t$CLASS"
   fi
-done; }
+done; } | column -t

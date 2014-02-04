@@ -21,4 +21,4 @@ while read IGNORE PID REST; do
     CLASS=$(jps | grep "^${PID}\ " | cut -d' ' -f2)
   fi
   echo $CLASS $PID $REST
-done; }
+done; } | column -t
