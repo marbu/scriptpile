@@ -18,7 +18,7 @@ play_podcast()
 {
   POS_OLD=$(mpc playlist | wc -l)
   $DEBUG mpc stop
-  $DEBUG mpc add "$(get_mpd_path $1)"
+  $DEBUG mpc add "$(get_mpd_path "$1")"
   $DEBUG mpc play $(($POS_OLD+1))
 }
 
