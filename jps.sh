@@ -9,7 +9,8 @@ fi
 PID_FILE=$(mktemp /tmp/jps.XXXXXXXX.pid)
 
 { jps $@ & echo $! > $PID_FILE; } | {
-JPS_PID=$(cat $PID_FILE);
+JPS_PID=$(cat $PID_FILE)
+rm $PID_FILE
 while read PID CLASS; do
   # don't show jps process itself
   if [[ $JPS_PID = $PID ]]; then
@@ -21,5 +22,3 @@ while read PID CLASS; do
     echo -e "$PID\t$USER\t$CLASS"
   fi
 done; } | column -t
-
-rm $PID_FILE
