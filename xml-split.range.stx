@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<stx:transform xmlns:stx="http://stx.sourceforge.net/2002/ns"
+               version="1.0"
+               pass-through="all">
+
+<stx:param name="dir" required="yes"/>
+<stx:param name="min" required="yes"/>
+<stx:param name="max" required="yes"/>
+<stx:param name="element" required="yes"/>
+<stx:variable name="count" select="1"/>
+
+<stx:template match="/*/*">
+  <stx:if test="($count &gt;= $min) and ($count &lt;= $max)">
+    <stx:result-document href="{$dir}/{$element}.{$count}.xml">
+      <stx:copy>
+        <stx:process-children />
+      </stx:copy>
+    </stx:result-document>
+  </stx:if>
+  <stx:assign name="count" select="$count + 1"/>
+</stx:template>
+
+</stx:transform>
