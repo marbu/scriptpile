@@ -17,10 +17,16 @@ ssh_push()
 
   # repo description, eg.: 'test.marbu.eu:~/tmp/foo/.git'
   REPO=$(git remote -v | grep '(push)' | grep "$REMOTE" | awk '{ print $2 }')
-  # hostname of the remote, eg. 'test.marbu.eu'
-  HOST_NAME=$(cut -d':' -f 1 <<< ${REPO})
 
-  GIT_REPO=$(cut -d':' -f 2 <<< ${REPO} | sed 's/~/\$HOME/')
+  # hostname of the remote, eg. 'test.marbu.eu'
+  if [[ "$REPO" =~ ^ssh://([^/]+)(/.*) ]]; then
+    HOST_NAME=${BASH_REMATCH[1]}
+	GIT_REPO=${BASH_REMATCH[2]}
+  else
+    HOST_NAME=$(cut -d':' -f 1 <<< ${REPO})
+    GIT_REPO=$(cut -d':' -f 2 <<< ${REPO} | sed 's/~/\$HOME/')
+  fi
+
   GIT_TREE=$(sed 's/~/\$HOME/' <<< ${GIT_REPO%.git})
   GIT_CMD="git --git-dir=$GIT_REPO --work-tree=$GIT_TREE"
 
