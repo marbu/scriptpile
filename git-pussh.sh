@@ -7,13 +7,14 @@
 
 show_help()
 {
-  echo "Usage: $(basename $0) <remote> <branch>"
+  echo "Usage: $(basename $0) <remote> <branch> [-f]"
 }
 
 ssh_push()
 {
   local REMOTE=$1
   local BRANCH=$2
+  local FORCE=$3
 
   # repo description, eg.: 'test.marbu.eu:~/tmp/foo/.git'
   REPO=$(git remote -v | grep '(push)' | grep "$REMOTE" | awk '{ print $2 }')
@@ -41,9 +42,9 @@ ssh_push()
   fi
 
   $DEBUG ssh "$HOST_NAME" "$GIT_CMD checkout -b __pussh_tmp"
-  $DEBUG git push "$REMOTE" "$BRANCH"
+  $DEBUG git push "$FORCE" "$REMOTE" "$BRANCH"
   $DEBUG ssh "$HOST_NAME" "$GIT_CMD checkout ${PREV_BRANCH:-\$PREV_BRANCH}"
-  $DEBUG ssh "$HOST_NAME" "$GIT_CMD branch -d __pussh_tmp"
+  $DEBUG ssh "$HOST_NAME" "$GIT_CMD branch -D __pussh_tmp"
 }
 
 #
@@ -56,12 +57,12 @@ if [[ $1 = "-d" ]]; then
   shift
 fi
 
-if [[ $# != 2 ]]; then
+if [[ $# != 2 && $# != 3 ]]; then
   show_help
   exit
 fi
 
 case $1 in
   help|-h|--help) show_help;;
-  *)              ssh_push "$1" "$2";;
+  *)              ssh_push "$1" "$2" "$3";;
 esac
