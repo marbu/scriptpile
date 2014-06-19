@@ -28,11 +28,21 @@ ssh_push()
   fi
 
   GIT_TREE=$(sed 's/~/\$HOME/' <<< ${GIT_REPO%.git})
+
   GIT_CMD="git --git-dir=$GIT_REPO --work-tree=$GIT_TREE"
+  SHOW_BRANCH="rev-parse --abbrev-ref HEAD"
+
+  # we need to know current branch to be able to switch back later
+  # because 'git checkout -' may not always work
+  if [[ $DEBUG ]]; then
+    echo "PREV_BRANCH=\$(ssh $HOST_NAME \"$GIT_CMD $SHOW_BRANCH\")"
+  else
+    PREV_BRANCH=$(ssh "$HOST_NAME" "$GIT_CMD $SHOW_BRANCH")
+  fi
 
   $DEBUG ssh "$HOST_NAME" "$GIT_CMD checkout -b __pussh_tmp"
   $DEBUG git push "$REMOTE" "$BRANCH"
-  $DEBUG ssh "$HOST_NAME" "$GIT_CMD checkout -"
+  $DEBUG ssh "$HOST_NAME" "$GIT_CMD checkout ${PREV_BRANCH:-\$PREV_BRANCH}"
   $DEBUG ssh "$HOST_NAME" "$GIT_CMD branch -d __pussh_tmp"
 }
 
