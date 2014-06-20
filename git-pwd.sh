@@ -6,4 +6,8 @@ if ! GIT_ROOT=$(git rev-parse --show-toplevel); then
   exit 1                                                                    
 fi 
 
-echo ${PWD#"${GIT_ROOT}/"}
+if [[ "$PWD" = "$GIT_ROOT" ]]; then
+  echo "/"
+else
+  echo ${PWD#"${GIT_ROOT}"}
+fi
