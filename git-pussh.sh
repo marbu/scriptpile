@@ -22,7 +22,7 @@ ssh_push()
   # hostname of the remote, eg. 'test.marbu.eu'
   if [[ "$REPO" =~ ^ssh://([^/]+)(/.*) ]]; then
     HOST_NAME=${BASH_REMATCH[1]}
-	GIT_REPO=${BASH_REMATCH[2]}
+    GIT_REPO=${BASH_REMATCH[2]}
   else
     HOST_NAME=$(cut -d':' -f 1 <<< ${REPO})
     GIT_REPO=$(cut -d':' -f 2 <<< ${REPO} | sed 's/~/\$HOME/')
