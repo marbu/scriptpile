@@ -1,25 +1,30 @@
 #!/usr/bin/groovy
 
-// TODO: use streams to create cat() method (just to see how it works)
-
 /*
  * Simple cat implementation in Groovy.
  */
 class Cat {
 
     /*
-     * Method implementing main function.
+     * Read and print content of a file object.
+     */
+    static void cat(file) {
+        file.eachLine { line -> println(line) }
+    }
+
+    /*
+     * Method of main function.
      */
     static void main(String[] args) {
         int retcode = 0
         if (args.size() == 0) {
             // this will catch keyborad exception and return 130 by default
-            new InputStreamReader(System.in).eachLine { line -> println(line) }
+            cat(new InputStreamReader(System.in))
             System.exit(retcode)
         }
         args.each { filename ->
             try {
-                new File(filename).eachLine { line -> println(line) } 
+                cat(new File(filename))
             } catch (java.io.IOException ex) {
                 System.err.println(ex)
                 retcode = 1
