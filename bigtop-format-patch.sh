@@ -30,7 +30,7 @@ get_patch_name()
 make_patch()
 {
   GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  if [[ ${GIT_BRANCH}  =~ ^local_(BIGTOP-[0-9]+)$ ]]; then
+  if [[ ${GIT_BRANCH}  =~ ^local_(BIGTOP-[0-9]+).*$ ]]; then
     BIGTOP_JIRA=${BASH_REMATCH[1]}
   else
     die "name of current branch doesn't follow regexp local_BIGTOP-[0-9]+"
