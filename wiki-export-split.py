@@ -33,10 +33,11 @@ class WikiPageDumper(object):
     Wiki page file dumper.
     """
 
-    def __init__(self):
+    def __init__(self, ignore_redirect=False):
         self.id = None
         self.title = None
         self._file = None
+        self._ignore_redirect = ignore_redirect
 
     def start(self):
         self.id = None
@@ -44,7 +45,10 @@ class WikiPageDumper(object):
         self._file = NamedTemporaryFile(suffix=".wikitext", dir=os.getcwd(), delete=False)
 
     def write(self, content):
-        self._file.write(content.encode("utf8"))
+        if self._ignore_redirect and content.startswith('#REDIRECT'):
+            os.unlink(self._file.name)
+        else:
+            self._file.write(content.encode("utf8"))
 
     def end(self):
         self._file.close()
@@ -97,13 +101,13 @@ def process_xml(xml_file, opts):
     Process xml file with wikipedia dump.
     """
     parser = xml.sax.make_parser()
-    page_dumper = WikiPageDumper()
+    page_dumper = WikiPageDumper(ignore_redirect=opts.noredir)
     parser.setContentHandler(WikiPageHandler(page_dumper))
     parser.parse(xml_file)
 
 def main(argv=None):
     op = OptionParser(usage="usage: %prog [options] [wikixml]")
-    # op.add_option("--foo", action="store", help="foo")
+    op.add_option("--noredir", action="store_true", help="ignore redirection pages")
     opts, args = op.parse_args()
 
     if len(args) == 0:
