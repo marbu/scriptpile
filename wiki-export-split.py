@@ -41,12 +41,12 @@ class WikiPageDumper(object):
     def start(self):
         self.id = None
         self.title = None
-        self._file = NamedTemporaryFile(prefix="wiki.", dir=os.getcwd(), delete=False)
+        self._file = NamedTemporaryFile(suffix=".wikitext", dir=os.getcwd(), delete=False)
 
     def write(self, content):
         self._file.write(content.encode("utf8"))
 
-    def close(self):
+    def end(self):
         self._file.close()
 
 
@@ -60,11 +60,11 @@ class WikiPageHandler(xml.sax.ContentHandler):
     # https://meta.wikimedia.org/wiki/Help:Export#Export_format
     # https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2
 
-    def __init__(self):
+    def __init__(self, page_dumper):
         xml.sax.ContentHandler.__init__(self)
         self._inside_page = False
         self._curr_elem = None
-        self.page = WikiPageDumper()
+        self.page = page_dumper
 
     def startElement(self, name, attrs):
         if name == "page":
@@ -78,7 +78,7 @@ class WikiPageHandler(xml.sax.ContentHandler):
     def endElement(self, name):
         if name == "page":
             self._inside_page = False
-            self.page.close()
+            self.page.end()
         self._curr_elem = None
 
     def characters(self, content):
@@ -97,7 +97,8 @@ def process_xml(xml_file, opts):
     Process xml file with wikipedia dump.
     """
     parser = xml.sax.make_parser()
-    parser.setContentHandler(WikiPageHandler())
+    page_dumper = WikiPageDumper()
+    parser.setContentHandler(WikiPageHandler(page_dumper))
     parser.parse(xml_file)
 
 def main(argv=None):
