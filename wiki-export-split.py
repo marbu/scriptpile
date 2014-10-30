@@ -124,7 +124,7 @@ def process_xml(xml_file, opts):
 def main(argv=None):
     op = OptionParser(usage="usage: %prog [options] [wikixml]")
     op.add_option("--noredir", action="store_true", help="ignore redirection pages")
-    op.add_option("--max-files", help="maximum number of output files")
+    op.add_option("--max-files", help="maximum number of output files", metavar="NUM")
     opts, args = op.parse_args()
 
     if len(args) == 0:
