@@ -28,25 +28,35 @@ from optparse import OptionParser
 from tempfile import NamedTemporaryFile
 
 
+class StopWikiProcessing(Exception):
+    pass
+
+
 class WikiPageDumper(object):
     """
     Wiki page file dumper.
     """
 
-    def __init__(self, ignore_redirect=False):
+    def __init__(self, ignore_redirect=False, max_files=None):
         self.id = None
         self.title = None
         self._file = None
         self._ignore_redirect = ignore_redirect
+        self._file_count = 0
+        self._file_max = max_files
 
     def start(self):
         self.id = None
         self.title = None
+        self._file_count += 1
+        if self._file_max is not None and self._file_count > self._file_max:
+            raise StopWikiProcessing()
         self._file = NamedTemporaryFile(suffix=".wikitext", dir=os.getcwd(), delete=False)
 
     def write(self, content):
         if self._ignore_redirect and content.startswith('#REDIRECT'):
             os.unlink(self._file.name)
+            self._file_count -= 1
         else:
             self._file.write(content.encode("utf8"))
 
@@ -101,13 +111,20 @@ def process_xml(xml_file, opts):
     Process xml file with wikipedia dump.
     """
     parser = xml.sax.make_parser()
-    page_dumper = WikiPageDumper(ignore_redirect=opts.noredir)
+    page_dumper = WikiPageDumper(
+        ignore_redirect=opts.noredir,
+        max_files=int(opts.max_files),
+        )
     parser.setContentHandler(WikiPageHandler(page_dumper))
-    parser.parse(xml_file)
+    try:
+        parser.parse(xml_file)
+    except StopWikiProcessing, ex:
+        pass
 
 def main(argv=None):
     op = OptionParser(usage="usage: %prog [options] [wikixml]")
     op.add_option("--noredir", action="store_true", help="ignore redirection pages")
+    op.add_option("--max-files", help="maximum number of output files")
     opts, args = op.parse_args()
 
     if len(args) == 0:
