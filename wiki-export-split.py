@@ -37,18 +37,21 @@ class WikiPageDumper(object):
     Wiki page file dumper.
     """
 
-    def __init__(self, ignore_redirect=False, max_files=None):
+    def __init__(self, ignore_redirect=False, max_files=None, naming_scheme=None):
         self.id = None
         self.title = None
         self._file = None
         self._ignore_redirect = ignore_redirect
+        self._file_deleted = False
         self._file_count = 0
         self._file_max = max_files
+        self._naming_scheme = naming_scheme
 
     def start(self):
         self.id = None
         self.title = None
         self._file_count += 1
+        self._file_deleted = False
         if self._file_max is not None and self._file_count > self._file_max:
             raise StopWikiProcessing()
         self._file = NamedTemporaryFile(suffix=".wikitext", dir=os.getcwd(), delete=False)
@@ -57,11 +60,26 @@ class WikiPageDumper(object):
         if self._ignore_redirect and content.startswith('#REDIRECT'):
             os.unlink(self._file.name)
             self._file_count -= 1
+            self._file_deleted = True
         else:
             self._file.write(content.encode("utf8"))
 
     def end(self):
         self._file.close()
+        # rename file based on selected naming scheme (default: do nothing)
+        new_name = None
+        if self._naming_scheme == "title" and self.title is not None:
+            new_name = self.title
+        elif self._naming_scheme == "id" and self.id is not None:
+            new_name = self.id
+        if new_name is not None and not self._file_deleted:
+            full_new_name = os.path.join(
+                os.path.dirname(self._file.name), "%s.wikitext" % new_name)
+            try:
+                os.rename(self._file.name, full_new_name)
+            except OSError, ex:
+                msg = "error: file {0} can't be renamed to {1}\n"
+                sys.stderr.write(msg.format(self._file.name, full_new_name))
 
 
 class WikiPageHandler(xml.sax.ContentHandler):
@@ -114,6 +132,7 @@ def process_xml(xml_file, opts):
     page_dumper = WikiPageDumper(
         ignore_redirect=opts.noredir,
         max_files=int(opts.max_files),
+        naming_scheme=opts.filenames,
         )
     parser.setContentHandler(WikiPageHandler(page_dumper))
     try:
@@ -125,6 +144,7 @@ def main(argv=None):
     op = OptionParser(usage="usage: %prog [options] [wikixml]")
     op.add_option("--noredir", action="store_true", help="ignore redirection pages")
     op.add_option("--max-files", help="maximum number of output files", metavar="NUM")
+    op.add_option("--filenames", help="naming scheme for output files", metavar="SCHEME", choices=('id', 'title', 'random'))
     opts, args = op.parse_args()
 
     if len(args) == 0:
