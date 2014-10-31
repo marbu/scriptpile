@@ -59,7 +59,8 @@ class WikiPageDumper(object):
         self._file = NamedTemporaryFile(suffix=".wikitext", dir=os.getcwd(), delete=False)
 
     def write(self, content):
-        if self._ignore_redirect and content.startswith('#REDIRECT'):
+        content_header = content[:9].upper()
+        if self._ignore_redirect and content_header.startswith('#REDIRECT'):
             os.unlink(self._file.name)
             self._file_count -= 1
             self._file_deleted = True
