@@ -138,7 +138,7 @@ def process_xml(xml_file, opts):
     parser = xml.sax.make_parser()
     page_dumper = WikiPageDumper(
         ignore_redirect=opts.noredir,
-        max_files=int(opts.max_files),
+        max_files=opts.max_files,
         naming_scheme=opts.filenames,
         )
     parser.setContentHandler(WikiPageHandler(page_dumper))
@@ -150,7 +150,7 @@ def process_xml(xml_file, opts):
 def main(argv=None):
     op = OptionParser(usage="usage: %prog [options] [wikixml]")
     op.add_option("--noredir", action="store_true", help="ignore redirection pages")
-    op.add_option("--max-files", help="maximum number of output files", metavar="NUM")
+    op.add_option("--max-files", help="maximum number of output files", metavar="NUM", type="int")
     op.add_option("--filenames", help="naming scheme for output files", metavar="SCHEME", choices=('id', 'title', 'sha1', 'random'))
     opts, args = op.parse_args()
 
