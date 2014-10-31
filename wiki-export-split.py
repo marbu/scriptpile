@@ -40,6 +40,7 @@ class WikiPageDumper(object):
     def __init__(self, ignore_redirect=False, max_files=None, naming_scheme=None):
         self.id = None
         self.title = None
+        self.sha1sum = None
         self._file = None
         self._ignore_redirect = ignore_redirect
         self._file_deleted = False
@@ -50,6 +51,7 @@ class WikiPageDumper(object):
     def start(self):
         self.id = None
         self.title = None
+        self.sha1sum = None
         self._file_count += 1
         self._file_deleted = False
         if self._file_max is not None and self._file_count > self._file_max:
@@ -72,6 +74,8 @@ class WikiPageDumper(object):
             new_name = self.title
         elif self._naming_scheme == "id" and self.id is not None:
             new_name = self.id
+        elif self._naming_scheme == "sha1" and self.sha1sum is not None:
+            new_name = self.sha1sum
         if new_name is not None and not self._file_deleted:
             full_new_name = os.path.join(
                 os.path.dirname(self._file.name), "%s.wikitext" % new_name)
@@ -120,6 +124,8 @@ class WikiPageHandler(xml.sax.ContentHandler):
             self.page.id = content
         elif self._curr_elem == "title":
             self.page.title = content
+        elif self._curr_elem == "sha1":
+            self.page.sha1sum = content
         elif self._curr_elem == "text":
             self.page.write(content)
 
@@ -144,7 +150,7 @@ def main(argv=None):
     op = OptionParser(usage="usage: %prog [options] [wikixml]")
     op.add_option("--noredir", action="store_true", help="ignore redirection pages")
     op.add_option("--max-files", help="maximum number of output files", metavar="NUM")
-    op.add_option("--filenames", help="naming scheme for output files", metavar="SCHEME", choices=('id', 'title', 'random'))
+    op.add_option("--filenames", help="naming scheme for output files", metavar="SCHEME", choices=('id', 'title', 'sha1', 'random'))
     opts, args = op.parse_args()
 
     if len(args) == 0:
