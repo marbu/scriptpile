@@ -155,7 +155,10 @@ def process_xml(xml_file, opts):
     """
     parser = xml.sax.make_parser()
     try:
-        re_title = re.compile(opts.filter_title)
+        if opts.filter_title is not None:
+            re_title = re.compile(opts.filter_title)
+        else:
+            re_title = None
     except re.error, ex:
         msg = "error: invalid regexp: {0}\n"
         sys.stderr.write(msg.format(ex))
