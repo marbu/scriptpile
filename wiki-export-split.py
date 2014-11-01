@@ -29,6 +29,13 @@ from optparse import OptionParser
 from tempfile import NamedTemporaryFile
 
 
+def base36to16(checksum):
+    """
+    Convert sha1 checksum from base36 form into base16 form.
+    """
+    return "%040x" % int(checksum, 36)
+
+
 class StopWikiProcessing(Exception):
     pass
 
@@ -39,7 +46,7 @@ class WikiPageDumper(object):
     """
 
     def __init__(self, ignore_redirect=False, max_files=None, re_title=None,
-        naming_scheme=None
+        naming_scheme=None, checksum_file=None,
         ):
         self.id = None
         self.title = None
@@ -51,6 +58,7 @@ class WikiPageDumper(object):
         self._file_max = max_files
         self._naming_scheme = naming_scheme
         self._re_title = re_title
+        self._checksum_file = checksum_file
 
     def start(self):
         self.id = None
@@ -96,13 +104,19 @@ class WikiPageDumper(object):
         elif self._naming_scheme == "sha1" and self.sha1sum is not None:
             new_name = self.sha1sum
         if new_name is not None and not self._file_deleted:
+            new_name = "{0}.wikitext".format(new_name)
             full_new_name = os.path.join(
-                os.path.dirname(self._file.name), "%s.wikitext" % new_name)
+                os.path.dirname(self._file.name), new_name)
             try:
                 os.rename(self._file.name, full_new_name)
             except OSError, ex:
                 msg = "error: file {0} can't be renamed to {1}\n"
                 sys.stderr.write(msg.format(self._file.name, full_new_name))
+        # if requested, write sha1sum of current page into dedicated file
+        if self._checksum_file is not None and not self._file_deleted:
+            basename = new_name or os.path.basename(self._file.name)
+            line = "{0}  {1}\n".format(base36to16(self.sha1sum), basename)
+            self._checksum_file.write(line)
 
 
 class WikiPageHandler(xml.sax.ContentHandler):
@@ -153,7 +167,7 @@ def process_xml(xml_file, opts):
     """
     Process xml file with wikipedia dump.
     """
-    parser = xml.sax.make_parser()
+    # compile regular expression
     try:
         if opts.filter_title is not None:
             re_title = re.compile(opts.filter_title)
@@ -163,17 +177,31 @@ def process_xml(xml_file, opts):
         msg = "error: invalid regexp: {0}\n"
         sys.stderr.write(msg.format(ex))
         return 1
+    # create file for list of sha1 checksums
+    try:
+        if opts.sha1sum is not None:
+            checksum_file = open(opts.sha1sum, mode="w")
+        else:
+            checksum_file = None
+    except IOError, ex:
+        msg = "error: can't create checksum file: {0}\n"
+        sys.stderr.write(msg.format(ex))
+        return 1
     page_dumper = WikiPageDumper(
         ignore_redirect=opts.noredir,
         max_files=opts.max_files,
         naming_scheme=opts.filenames,
         re_title=re_title,
+        checksum_file=checksum_file,
         )
+    parser = xml.sax.make_parser()
     parser.setContentHandler(WikiPageHandler(page_dumper))
     try:
         parser.parse(xml_file)
     except StopWikiProcessing, ex:
         pass
+    if checksum_file is not None:
+        checksum_file.close()
 
 def main(argv=None):
     op = OptionParser(usage="usage: %prog [options] [wikixml]")
@@ -181,6 +209,7 @@ def main(argv=None):
     op.add_option("--max-files", help="maximum number of output files", metavar="NUM", type="int")
     op.add_option("--filenames", help="naming scheme for output files", metavar="SCHEME", choices=('id', 'title', 'sha1', 'random'))
     op.add_option("--filter-title", help="save page only if it's title matches given regexp", metavar="RE")
+    op.add_option("--sha1sum", help="save sha1 checksums into FILE", metavar="FILE")
     opts, args = op.parse_args()
 
     if len(args) == 0:
