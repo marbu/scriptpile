@@ -22,6 +22,7 @@ wiki-export-split: split wikipedia xml dump into plain text files
 
 
 import os
+import re
 import sys
 import xml.sax
 from optparse import OptionParser
@@ -37,7 +38,9 @@ class WikiPageDumper(object):
     Wiki page file dumper.
     """
 
-    def __init__(self, ignore_redirect=False, max_files=None, naming_scheme=None):
+    def __init__(self, ignore_redirect=False, max_files=None, re_title=None,
+        naming_scheme=None
+        ):
         self.id = None
         self.title = None
         self.sha1sum = None
@@ -47,6 +50,7 @@ class WikiPageDumper(object):
         self._file_count = 0
         self._file_max = max_files
         self._naming_scheme = naming_scheme
+        self._re_title = re_title
 
     def start(self):
         self.id = None
@@ -58,14 +62,28 @@ class WikiPageDumper(object):
             raise StopWikiProcessing()
         self._file = NamedTemporaryFile(suffix=".wikitext", dir=os.getcwd(), delete=False)
 
+    def _ignore_current_page(self):
+        """
+        Flag file of current page for deletion and unlink it.
+        """
+        os.unlink(self._file.name)
+        self._file_count -= 1
+        self._file_deleted = True
+
     def write(self, content):
+        if self._file_deleted:
+            return
+        # ignore pages not matching regexp if needed
+        if self._re_title is not None and self.title is not None:
+            if not self._re_title.search(self.title):
+                self._ignore_current_page()
+                return
+        # ignore redirect pages if needed
         content_header = content[:9].upper()
         if self._ignore_redirect and content_header.startswith('#REDIRECT'):
-            os.unlink(self._file.name)
-            self._file_count -= 1
-            self._file_deleted = True
-        else:
-            self._file.write(content.encode("utf8"))
+            self._ignore_current_page()
+            return
+        self._file.write(content.encode("utf8"))
 
     def end(self):
         self._file.close()
@@ -136,10 +154,17 @@ def process_xml(xml_file, opts):
     Process xml file with wikipedia dump.
     """
     parser = xml.sax.make_parser()
+    try:
+        re_title = re.compile(opts.filter_title)
+    except re.error, ex:
+        msg = "error: invalid regexp: {0}\n"
+        sys.stderr.write(msg.format(ex))
+        return 1
     page_dumper = WikiPageDumper(
         ignore_redirect=opts.noredir,
         max_files=opts.max_files,
         naming_scheme=opts.filenames,
+        re_title=re_title,
         )
     parser.setContentHandler(WikiPageHandler(page_dumper))
     try:
@@ -152,13 +177,14 @@ def main(argv=None):
     op.add_option("--noredir", action="store_true", help="ignore redirection pages")
     op.add_option("--max-files", help="maximum number of output files", metavar="NUM", type="int")
     op.add_option("--filenames", help="naming scheme for output files", metavar="SCHEME", choices=('id', 'title', 'sha1', 'random'))
+    op.add_option("--filter-title", help="save page only if it's title matches given regexp", metavar="RE")
     opts, args = op.parse_args()
 
     if len(args) == 0:
-        process_xml(sys.stdin, opts)
+        return process_xml(sys.stdin, opts)
     else:
         with open(args[0], "r") as fobj:
-            process_xml(fobj, opts)
+            return process_xml(fobj, opts)
 
 if __name__ == '__main__':
     sys.exit(main())
