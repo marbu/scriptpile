@@ -56,7 +56,7 @@ def build_dir_dict(fo, basedir):
     return dir_dict
 
 
-def dirdiff(fo1, fo2, basedir1=None, basedir2=None):
+def dirdiff(dd1, dd2):
     """
     Compare directory trees based on 2 hash files (fo1 and fo2).
 
@@ -67,8 +67,6 @@ def dirdiff(fo1, fo2, basedir1=None, basedir2=None):
     * F2 when given file exists only in hashfile2
     * FD when given file exists in both, but the content differs
     """
-    dd1 = build_dir_dict(fo1, basedir1)
-    dd2 = build_dir_dict(fo2, basedir2)
     for dir_path in dd1:
         if dir_path not in dd2:
             print('D1 {}'.format(dir_path))
@@ -96,7 +94,9 @@ def main():
 
     with open(args.hashfile1, "r", encoding='utf-8') as fo1, \
          open(args.hashfile2, "r", encoding='utf-8') as fo2:
-        dirdiff(fo1, fo2, basedir1=args.basedir1, basedir2=args.basedir2)
+        dd1 = build_dir_dict(fo1, args.basedir1)
+        dd2 = build_dir_dict(fo2, args.basedir2)
+        dirdiff(dd1, dd2)
 
 
 if __name__ == '__main__':
