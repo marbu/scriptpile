@@ -15,12 +15,6 @@ def cat(fobj):
     for line in iter(fobj.readline, ""):
         print line,
 
-def cat_file(filepath):
-    """
-    Read and print content of file by it's path.
-    """
-    with open(filepath, "r") as fobj:
-        cat(fobj)
 
 def main(argv=None):
     """
@@ -37,11 +31,13 @@ def main(argv=None):
         return retcode
     for filename in argv[1:]:
         try:
-            cat_file(filename)
+            with open(filename, "r") as fobj:
+                cat(fobj)
         except IOError, ex:
             sys.stderr.write("%s\n" % ex)
             retcode = 1
     return retcode
+
 
 if __name__ == '__main__':
     sys.exit(main())
