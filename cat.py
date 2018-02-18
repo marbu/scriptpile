@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
 """
@@ -12,8 +12,8 @@ def cat(fobj):
     """
     Read and print content of a file object.
     """
-    for line in iter(fobj.readline, ""):
-        print line,
+    for line in fobj:
+        print(line, end="")
 
 
 def main(argv=None):
@@ -26,14 +26,14 @@ def main(argv=None):
         try:
             cat(sys.stdin)
         except KeyboardInterrupt:
-            print
+            print()
             retcode = 130
         return retcode
     for filename in argv[1:]:
         try:
             with open(filename, "r") as fobj:
                 cat(fobj)
-        except IOError, ex:
+        except IOError as ex:
             sys.stderr.write("%s\n" % ex)
             retcode = 1
     return retcode
