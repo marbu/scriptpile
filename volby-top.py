@@ -14,14 +14,6 @@ from optparse import OptionParser
 from BeautifulSoup import BeautifulSoup
 
 
-def get_soup(url):
-    """
-    Download page from url and parse it into soup.
-    """
-    page = urllib.urlopen(url)
-    soup = BeautifulSoup(page)
-    return soup
-
 def extract_parties(soup):
     """
     Extract results data from soup.
@@ -107,7 +99,9 @@ def main(argv=None):
     else:
         url = "http://volby.cz/pls/ps2013/ps2?xjazyk=CZ"
 
-    soup = get_soup(url)
+    page = urllib.urlopen(url)
+    soup = BeautifulSoup(page)
+
     parties = extract_parties(soup)
     parties = sort_parties(parties)
 
