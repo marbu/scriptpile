@@ -97,7 +97,7 @@ def main(argv=None):
     if len(args) > 0:
         url = args[0]
     else:
-        url = "http://volby.cz/pls/ps2013/ps2?xjazyk=CZ"
+        url = "http://volby.cz/pls/ps2017/ps2?xjazyk=CZ"
 
     page = urllib.urlopen(url)
     soup = BeautifulSoup(page)
