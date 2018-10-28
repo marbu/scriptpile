@@ -41,6 +41,7 @@ mkdir -p /mnt/snap_home/
 mount -o ro /dev/vg_rhea/lv_snap_home /mnt/snap_home/
 
 # mount target dist (where the backup will be stored)
+mkdir -p /mnt/wd_backup_disk/
 mount --uuid $WD_BACKUP_UUID -o rw /mnt/wd_backup_disk/
 
 # run the backup
