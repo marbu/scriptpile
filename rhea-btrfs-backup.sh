@@ -51,3 +51,6 @@ rsyncbtrfs backup /mnt/snap_home/ /mnt/wd_backup_disk/rhea_home_snapshots
 umount /mnt/snap_home/
 lvremove -f /dev/vg_rhea/lv_snap_home
 umount /mnt/wd_backup_disk/
+
+# show user friendly final message
+echo "Backup complete with success"
