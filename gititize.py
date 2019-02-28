@@ -43,7 +43,7 @@ EXT2FORMAT = {
     }
 
 
-def ext2format(ext, default="markdown"):
+def ext2format(ext, default):
     """
     Get pandoc format based on file extension. Returns none if ext is not
     recognized.
@@ -82,6 +82,11 @@ def main():
         dest="use_force",
         action="store_true",
         help="force conversion for a file without extension")
+    ap.add_argument("-d",
+        dest="default_format",
+        default="markdown",
+        help=("pandoc format for files without extension "
+              "(markdown used if this option is not specified)"))
     args = ap.parse_args()
 
     for path in args.file:
@@ -89,7 +94,7 @@ def main():
         if len(ext) <= 1 and not args.use_force:
             print("skipping " + path + " (no extension)", file=sys.stderr)
             continue
-        pandoc_format = ext2format(ext)
+        pandoc_format = ext2format(ext, args.default_format)
         if pandoc_format is None:
             print("skipping " + path + " (unknown format)", file=sys.stderr)
             continue
