@@ -31,6 +31,8 @@ def xml_data_pp(fo, ids=" "):
         elif event == "end":
             level -= 1
             print(ids*level + "</" + el.tag + ">")
+        # we no longer need to keep data of this element in the memory
+        el.clear()
 
 
 def main():
