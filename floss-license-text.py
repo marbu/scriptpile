@@ -5,6 +5,7 @@
 # works on Fedora only
 
 import argparse
+import os
 import random
 import sys
 
@@ -23,7 +24,19 @@ def main():
         choices=list(LICENCES.keys()),
         nargs='+',
         help="show this licence(s) only")
+    ap.add_argument("--check",
+        action='store_true',
+        help="check that licence files are available")
     args = ap.parse_args()
+
+    if args.check:
+        retcode = 0
+        for name, filepath in LICENCES.items():
+            if not os.path.exists(filepath):
+                msg = "{0} file {1} is missing"
+                print(msg.format(name, filepath), file=sys.stderr)
+                retcode = 1
+        return retcode
 
     if args.l is not None:
         if len(args.l) == 1:
