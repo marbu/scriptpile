@@ -11,9 +11,9 @@ import sys
 
 LICENCES = {
     "GPLv3": "/usr/share/licenses/bash/COPYING",
-    "GPLv2": "/usr/share/licenses/util-linux/COPYING.GPLv2",
+    "GPLv2": "/usr/share/licenses/util-linux/COPYING.GPL-2.0-or-later",
     "ASL_2.0": "/usr/share/texlive/licenses/apache2.txt",
-    "MIT": "/usr/share/licenses/fedora-release/LICENSE", # aka expat
+    "MIT": "/usr/share/licenses/libcurl/COPYING", # aka expat
     "BSD": "/usr/share/texlive/licenses/bsd.txt", # TODO: which BSD?
     }
 
