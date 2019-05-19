@@ -74,7 +74,12 @@ def main():
         # parent process
         os.close(w_fd)
         os.dup2(r_fd, 0)
-        os.execv('/usr/bin/hledger', ['hledger'] + argv[1:])
+        here = os.path.abspath(os.path.dirname(__file__))
+        hledger_args = [
+            'hledger',
+            '--rules-file',
+            os.path.join(here, 'hledger-cz.fio.rules')]
+        os.execv('/usr/bin/hledger', hledger_args + argv[1:])
 
 
 if __name__ == '__main__':
