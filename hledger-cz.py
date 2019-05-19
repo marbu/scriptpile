@@ -50,6 +50,8 @@ def convert_csv(in_file, out_file):
         quoting=csv.QUOTE_ALL,
         )
     for row in csv_reader:
+        if len(row) == 19:
+            row[2] = row[2].replace(",", ".")
         csv_writer.writerow(row)
 
 
