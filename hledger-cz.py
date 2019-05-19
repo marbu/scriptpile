@@ -61,6 +61,13 @@ def main():
         cp = subprocess.run(["hledger"] + sys.argv[1:])
         return cp.returncode
 
+    # try to locate rules-file, use default if not found
+    dir_path = os.path.abspath(os.path.dirname(file_name))
+    rules_file = os.path.join(dir_path, os.path.basename(file_name) + ".rules")
+    if not os.path.exists(rules_file):
+        here = os.path.abspath(os.path.dirname(__file__))
+        rules_file = os.path.join(here, 'hledger-cz.fio.rules')
+
     r_fd, w_fd = os.pipe()
     pid = os.fork()
     if pid == 0:
@@ -74,11 +81,7 @@ def main():
         # parent process
         os.close(w_fd)
         os.dup2(r_fd, 0)
-        here = os.path.abspath(os.path.dirname(__file__))
-        hledger_args = [
-            'hledger',
-            '--rules-file',
-            os.path.join(here, 'hledger-cz.fio.rules')]
+        hledger_args = ['hledger', '--rules-file', rules_file]
         os.execv('/usr/bin/hledger', hledger_args + argv[1:])
 
 
