@@ -4,5 +4,5 @@ date-format %d.%m.%Y
 currency %currency 
 account2 %account2_id/%bank_id
 
-description %note2
-comment %msg (%type)
+description %type
+comment %msg; %note2
