@@ -61,7 +61,13 @@ def make_header(pandoc_format):
     """
     Generate pandoc header based on given metadata.
     """
-    lines = ["---", "format: " + pandoc_format , "..."]
+    lines = [
+        "---",
+        "format: " + pandoc_format,
+        "categories: gititized",
+        "title: TODO",
+        "...",
+        ]
     # separate the header from the rest of the file via empty line, with
     # exception of orgmode files ...
     if pandoc_format == "org":
