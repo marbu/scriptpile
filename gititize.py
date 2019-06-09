@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import subprocess
 import sys
 
 
@@ -88,6 +89,10 @@ def main():
         dest="use_force",
         action="store_true",
         help="force conversion for a file without extension")
+    ap.add_argument("-c",
+        dest="make_commit",
+        action="store_true",
+        help="make a git commit for the conversion")
     ap.add_argument("-d",
         dest="default_format",
         default="markdown",
@@ -110,7 +115,12 @@ def main():
             with open(new_path, "w") as f_out:
                 f_out.write(make_header(pandoc_format))
                 f_out.write(data)
-        os.remove(path)
+        if args.make_commit:
+            subprocess.run(["git", "rm", path])
+            subprocess.run(["git", "add", new_path])
+            subprocess.run(["git", "commit", "-m", "gititize " + path])
+        else:
+            os.remove(path)
 
 
 if __name__ == '__main__':
