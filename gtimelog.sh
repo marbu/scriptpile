@@ -4,11 +4,11 @@
 # data directory.
 # by marbu, Apache License 2.0, 2019
 
-GTIMELOG_DIR=$(gtimelog --version | awk '/^Data/{print $3;}')
+GTIMELOG_DIR=$(/usr/bin/gtimelog --version | awk '/^Data/{print $3;}')
 
 show_help()
 {
-  gtimelog $1
+  /usr/bin/gtimelog $1
   echo "Additional Commands (inplemented in the wrapper):"
   echo "  sh, bash                   Run bash shell in data directory"
   echo "  cal                        Run git cal on data directory"
@@ -46,7 +46,7 @@ gtimelog_wrapper()
     git add *
     git commit -m "pre gtimelog run cleanup commit"
   fi
-  gtimelog "$*"
+  /usr/bin/gtimelog "$*"
   git add *.txt && git commit -m "end of gtimelog session"
 }
 
