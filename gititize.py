@@ -78,6 +78,27 @@ def make_header(pandoc_format, title):
     return "\n".join(lines) + ending
 
 
+def format_md_links(data):
+    """
+    Find url strings and convert them into valid markdown links
+    assuming there are no spaces in an url.
+    """
+    lines = data.splitlines()
+    for i, line in enumerate(lines):
+        words = line.split()
+        line_changed = False
+        for j, word in enumerate(words):
+            if word.startswith("http"):
+                words[j] = "<" + word + ">"
+                line_changed = True
+        if line_changed:
+            # convert the line to a list item if there is nothing else there
+            if len(words) == 1:
+                words.insert(0, "*")
+            lines[i] = " ".join(words)
+    return '\n'.join(lines) + '\n'
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Convert given text file into gitit wikipage file.")
@@ -118,6 +139,8 @@ def main():
             data = f_in.read()
             with open(new_path, "w") as f_out:
                 f_out.write(make_header(pandoc_format, args.title))
+                if pandoc_format.startswith("markdown"):
+                    data = format_md_links(data)
                 f_out.write(data)
         if args.make_commit:
             subprocess.run(["git", "rm", path])
