@@ -58,7 +58,7 @@ def ext2format(ext, default):
     return pandoc_format
 
 
-def make_header(pandoc_format):
+def make_header(pandoc_format, title):
     """
     Generate pandoc header based on given metadata.
     """
@@ -66,7 +66,7 @@ def make_header(pandoc_format):
         "---",
         "format: " + pandoc_format,
         "categories: gititized",
-        "title: TODO",
+        "title: " + title,
         "...",
         ]
     # separate the header from the rest of the file via empty line, with
@@ -98,6 +98,10 @@ def main():
         default="markdown",
         help=("pandoc format for files without extension "
               "(markdown used if this option is not specified)"))
+    ap.add_argument("-t",
+        dest="title",
+        default="TODO",
+        help="title of the wikipage")
     args = ap.parse_args()
 
     for path in args.file:
@@ -113,7 +117,7 @@ def main():
         with open(path, "r") as f_in:
             data = f_in.read()
             with open(new_path, "w") as f_out:
-                f_out.write(make_header(pandoc_format))
+                f_out.write(make_header(pandoc_format, args.title))
                 f_out.write(data)
         if args.make_commit:
             subprocess.run(["git", "rm", path])
