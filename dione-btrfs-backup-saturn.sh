@@ -42,7 +42,7 @@ fi
 # Do the backup.
 #
 
-# mount target dist (where the backup will be stored)
+# mount target dir (where the backup will be stored)
 mkdir -p /mnt/${BACKUP_MOUNT_DIR}/
 mount ${BACKUP_DEV} -o rw /mnt/${BACKUP_MOUNT_DIR}/
 
@@ -54,13 +54,27 @@ mkdir -p /mnt/snap_home/
 mount -o ro /dev/${ORIGIN_VG}/snap_home /mnt/snap_home/
 mount /home
 
+# compute sha1 checksum of /home
+TMPSHA=$(mktemp)
+SHA_NAME=checksum.$(date -Idate).sha1
+cd /home
+find . -type f -print0 | xargs -0 sha1sum > "$TMPSHA"
+cd -
+
 # run the backup
 rsyncbtrfs backup /mnt/snap_home/ /mnt/${BACKUP_MOUNT_DIR}/${BACKUP_SUBVOLUME}
+
+# copy the sha1 sum file back to original home volume and the backup dir
+cp "$TMPSHA" /home/$SHA_NAME
+cp "$TMPSHA" /mnt/${BACKUP_MOUNT_DIR}/${BACKUP_SUBVOLUME}/$SHA_NAME/cur
+rm "$TMPSHA"
 
 # remove snapshot of /home
 umount /mnt/snap_home/
 lvchange -an ${ORIGIN_VG}/snap_home
 lvremove -f /dev/${ORIGIN_VG}/snap_home
+
+# umount tartet dir
 umount /mnt/${BACKUP_MOUNT_DIR}/
 
 # show user friendly final message
