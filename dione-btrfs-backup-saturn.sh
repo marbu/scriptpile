@@ -57,7 +57,7 @@ mount /home
 # compute sha1 checksum of /home
 TMPSHA=$(mktemp)
 SHA_NAME=checksum.$(date -Idate).sha1
-cd /home
+cd /mnt/snap_home/
 find . -type f -print0 | xargs -0 sha1sum > "$TMPSHA"
 cd -
 
