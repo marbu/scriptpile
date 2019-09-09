@@ -66,7 +66,7 @@ rsyncbtrfs backup /mnt/snap_home/ /mnt/${BACKUP_MOUNT_DIR}/${BACKUP_SUBVOLUME}
 
 # copy the sha1 sum file back to original home volume and the backup dir
 cp "$TMPSHA" /home/$SHA_NAME
-cp "$TMPSHA" /mnt/${BACKUP_MOUNT_DIR}/${BACKUP_SUBVOLUME}/$SHA_NAME/cur
+cp "$TMPSHA" /mnt/${BACKUP_MOUNT_DIR}/${BACKUP_SUBVOLUME}/cur/$SHA_NAME
 rm "$TMPSHA"
 
 # remove snapshot of /home
