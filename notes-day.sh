@@ -26,7 +26,7 @@ run_edit()
   LAST=$(git log --pretty=oneline | head -1 | cut -d' ' -f 2)
   $DEBUG && echo "# now: $NOW, last: $LAST"
 
-  $DEBUG vim -p $NOTE_FILES
+  $DEBUG vim -O $NOTE_FILES
   $DEBUG git add $NOTE_FILES
 
   if [[ $NOW = $LAST ]]; then
