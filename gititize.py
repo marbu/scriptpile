@@ -58,17 +58,31 @@ def ext2format(ext, default):
     return pandoc_format
 
 
-def make_header(pandoc_format, title):
+def get_categories(cat_str):
+    """
+    Transform string with categories from cli into list of categories.
+    """
+    if cat_str is None:
+        cat_list = ['gititized']
+    elif len(cat_str) == 0 :
+        cat_list = []
+    else:
+        cat_list = cat_str.split(',')
+    return cat_list
+
+
+def make_header(pandoc_format, title, categories):
     """
     Generate pandoc header based on given metadata.
     """
     lines = [
         "---",
         "format: " + pandoc_format,
-        "categories: gititized",
         "title: " + title,
         "...",
         ]
+    if categories is not None and len(categories) > 0:
+        lines.insert(2, "categories: " + " ".join(categories))
     # separate the header from the rest of the file via empty line, with
     # exception of orgmode files ...
     if pandoc_format == "org":
@@ -123,6 +137,9 @@ def main():
         dest="title",
         default="TODO",
         help="title of the wikipage")
+    ap.add_argument("-l",
+        dest="labels",
+        help="list of labels (wikipage categories) separated by a comma")
     args = ap.parse_args()
 
     for path in args.file:
@@ -138,7 +155,9 @@ def main():
         with open(path, "r") as f_in:
             data = f_in.read()
             with open(new_path, "w") as f_out:
-                f_out.write(make_header(pandoc_format, args.title))
+                categories = get_categories(args.labels)
+                header = make_header(pandoc_format, args.title, categories)
+                f_out.write(header)
                 if pandoc_format.startswith("markdown"):
                     data = format_md_links(data)
                 f_out.write(data)
