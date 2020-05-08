@@ -7,11 +7,18 @@ import hashlib
 import json
 import logging
 import os.path
+import subprocess
 import sys
 import urllib.request
 
 
+# based on info from https://signal.org/android/apk/
 LATEST_JSON_URL = "https://updates.signal.org/android/latest.json"
+SIGNAL_CERT_DIGEST = (
+    '29:F3:4E:5F:27:F2:11:B4:24:BC:5B:F9:D6:71:62:C0:'
+    'EA:FB:A2:DA:35:AF:35:C1:64:16:FC:44:62:76:BA:26')
+
+
 logger = logging.getLogger()
 
 
@@ -26,6 +33,28 @@ def set_logger(verbose_level):
         logger.setLevel(logging.DEBUG)
 
 
+def get_cert_fingerprint(apk_filename):
+    """
+    Check SHA256 fingerprint of APK signing certificate.
+    See also: https://security.stackexchange.com/questions/178936/
+    """
+    keytool_cmd = ['keytool', '-printcert', '-jarfile', apk_filename]
+    proc = subprocess.run(keytool_cmd, capture_output=True, check=True)
+    stderr = proc.stderr.decode('utf-8').strip()
+    stdout = proc.stdout.decode('utf-8')
+    logger.warning("stderr from keytool:\n%s", stderr)
+    checksums = []
+    for line in stdout.splitlines():
+        if line.startswith('\t SHA256: '):
+            checksums.append(line[10:])
+    logger.debug("checksums identified: %s", checksums)
+    if len(checksums) != 1:
+        logger.error("SHA256 fingerprint of apk cert can't be identified")
+        logger.debug(stdout)
+        return None
+    return checksums[0]
+
+
 def main():
     ap = argparse.ArgumentParser(description="Fetch latest signal apk file.")
     ap.add_argument(
@@ -34,6 +63,11 @@ def main():
         action="count",
         default=0,
         help="increase output verbosity")
+    ap.add_argument(
+        "-s",
+        dest="skip_cert_check",
+        action="store_true",
+        help="skip cert validation via keytool")
     args = ap.parse_args()
 
     set_logger(args.verbose_level)
@@ -82,6 +116,16 @@ def main():
             print(stored_digest + " from the checksum file", file=sys.stderr)
             checksum_fail = True
     if checksum_fail:
+        return 1
+
+    if args.skip_cert_check:
+        return 0
+
+    cert_digest = get_cert_fingerprint(apk_filename)
+    if cert_digest == SIGNAL_CERT_DIGEST:
+        logger.info("apk certificate fingerprint looks ok")
+    else:
+        logger.error("apk certificate fingerprint doesn't match")
         return 1
 
 
