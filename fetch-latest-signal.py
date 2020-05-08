@@ -12,27 +12,31 @@ import urllib.request
 
 
 LATEST_JSON_URL = "https://updates.signal.org/android/latest.json"
+logger = logging.getLogger()
+
+
+def set_logger(verbose_level):
+    if verbose_level > 0:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    if verbose_level > 1:
+        logger.setLevel(logging.DEBUG)
 
 
 def main():
     ap = argparse.ArgumentParser(description="Fetch latest signal apk file.")
     ap.add_argument(
         "-v",
-        dest="verbose",
+        dest="verbose_level",
         action="count",
         default=0,
         help="increase output verbosity")
     args = ap.parse_args()
 
-    logger = logging.getLogger()
-    if args.verbose > 0:
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-    if args.verbose > 1:
-        logger.setLevel(logging.DEBUG)
+    set_logger(args.verbose_level)
 
     try:
         logger.info("fetching %s", LATEST_JSON_URL)
