@@ -33,6 +33,18 @@ def set_logger(verbose_level):
         logger.setLevel(logging.DEBUG)
 
 
+def get_latest_dict(latest_json_url):
+    logger.info("fetching %s", latest_json_url)
+    try:
+        with urllib.request.urlopen(latest_json_url) as res:
+            latest = json.loads(res.read())
+            logger.debug("http headers:\n%s", res.info())
+    except Exception as ex:
+        logger.error(f"Failed to get '{latest_json_url}': %s", ex)
+        return None
+    return latest
+
+
 def get_cert_fingerprint(apk_filename):
     """
     Check SHA256 fingerprint of APK signing certificate.
@@ -72,13 +84,8 @@ def main():
 
     set_logger(args.verbose_level)
 
-    try:
-        logger.info("fetching %s", LATEST_JSON_URL)
-        with urllib.request.urlopen(LATEST_JSON_URL) as res:
-            latest = json.loads(res.read())
-            logger.debug("http headers:\n%s", res.info())
-    except Exception as ex:
-        logger.error(f"Failed to get '{LATEST_JSON_URL}': %s", ex)
+    latest = get_latest_dict(LATEST_JSON_URL)
+    if latest is None:
         return 1
 
     apk_filename = os.path.basename(latest['url'])
