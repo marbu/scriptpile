@@ -10,7 +10,8 @@ if [[ $# = 0 || $1 = "-h"  ]]; then
 fi
 
 if [[ "$1" == "$WIKIURL"* ]]; then
-  vim "${WIKIDIR}/${1#$WIKIURL}.page"
+  PAGEURL=${1%#*}
+  vim "${WIKIDIR}/${PAGEURL#$WIKIURL}.page"
 else
   echo "error: \"$1\" is not a valid wikipage url"
   exit 1
