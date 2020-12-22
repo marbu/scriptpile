@@ -1,0 +1,8 @@
+skip 1
+fields date, date2, descr, msg, account2_name, account2_id, ks, vs, ss, amount, total
+date-format %d-%m-%Y
+currency CZK
+account2 %account2_id
+
+description %descr
+comment %account2_name; %msg
