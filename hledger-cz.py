@@ -124,9 +124,10 @@ def main():
     rules_file = os.path.join(dir_path, os.path.basename(file_name) + ".rules")
 
     # try to quess bank type from a filename
-    if "mKonto" in file_name or "eMax" in file_name or file_name.startswith("_"):
+    base_name = os.path.basename(file_name)
+    if "mKonto" in base_name or "eMax" in base_name or base_name.startswith("_"):
         bank = MBANK
-    elif file_name.startswith("Pohyby_na_uctu"):
+    elif base_name.startswith("Pohyby_na_uctu"):
         bank = FIO
     else:
         err_msg = "error: failed to guess a bank type based on a filename"
