@@ -3,6 +3,14 @@ fields date, date2, descr, msg, account2_name, account2_id, ks, vs, ss, amount, 
 date-format %d-%m-%Y
 currency CZK
 account2 %account2_id
-
 description %descr
 comment %account2_name; %msg
+
+if VÝBĚR Z BANKOMATU
+  account2 expenses:cash
+if PŘIPSÁNÍ ÚROKŮ
+  account2 revenue:interest:mbank
+if DAŇ Z PŘIPSÁNÍ ÚROKU
+  account2 expenses:taxes:mbank
+if POPLATEK
+  account2 expenses:bankfees:mbank

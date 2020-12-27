@@ -1,8 +1,19 @@
-skip 13
+skip 12
 fields id1, date, amount, currency, account2_id, account2_name, bank_id, bank_name, ks, vs, ss, note1, msg, type, by, details, note2, bic, id2
 date-format %d.%m.%Y
 currency %currency 
 account2 %account2_id/%bank_id
-
 description %type
 comment %msg; %note2
+
+if Výběr z bankomatu
+  account2 expenses:cash
+if Připsaný úrok
+  account2 revenue:interest:fio
+if Odvod daně z úroků
+  account2 expenses:taxes:fio
+if
+Poplatek - dotaz na zůstatek
+Úrok z prodlení
+Poplatek - platební karta
+  account2 expenses:bankfees:fio
