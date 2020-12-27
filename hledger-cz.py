@@ -5,6 +5,7 @@
 from dataclasses import dataclass
 import csv
 import os
+import re
 import subprocess
 import sys
 
@@ -41,6 +42,17 @@ MBANK = BankCsvFormat(
     unquote_i=[5],
     filter_data_only=True,
     def_rule_file="hledger-cz.mbank.rules")
+
+
+KB_RE = re.compile("[0-9]{13}(_[0-9]{8}){2}.csv")
+KB = BankCsvFormat(
+    encoding="utf-8",
+    csv_reader_kwargs={'delimiter':';'},
+    fields_num=16,
+    amounts_i=[4],
+    unquote_i=[],
+    filter_data_only=False,
+    def_rule_file="hledger-cz.kb.rules")
 
 
 def unquote(str_value):
@@ -129,6 +141,8 @@ def main():
         bank = MBANK
     elif base_name.startswith("Pohyby_na_uctu"):
         bank = FIO
+    elif KB_RE.match(base_name):
+        bank = KB
     else:
         err_msg = "error: failed to guess a bank type based on a filename"
         print(err_msg, file=sys.stderr)

@@ -1,0 +1,24 @@
+skip 16
+fields date, date2, account2, account2_name, amount, vs, ks, ss, id, type, msg1, msg2, _, _, _, _
+date-format %d.%m.%Y
+currency CZK
+description %msg2
+comment %msg1 (%type)
+
+if
+Vyber hotovosti z ATM
+  account2 expenses:cash
+
+if
+Popl.vyb.z atm
+Popl. dotaz na zustatek ATM
+POPL.ZA VEDENI UCTU
+ODEPSANY UROK
+ARCHIVNI VYPIS
+  account2 expenses:bankfees:kb
+
+if 43-6964420277/0100
+  account2 revenue:discount:kb
+
+if Nakup u obchodnika
+  account2 expenses:stuff
