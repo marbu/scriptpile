@@ -2,6 +2,10 @@
 
 # Disable fs COW for all qcow images in /var/lib/libvirt/images directory.
 
+# expand non-matching globs to zero arguments, so that the for loop won't
+# go through any iteration when no qcow images are found
+shopt -s nullglob
+
 IMAGES_DIR=/var/lib/libvirt/images
 
 if [[ $1 = "-h" ]]; then
@@ -11,12 +15,18 @@ fi
 
 # debug mode
 if [[ $1 = "-d" ]]; then
+  # shellcheck disable=SC2209
   DEBUG=echo
   shift
+else
+  unset DEBUG
 fi
 
-if systemctl is-active libvirtd.service > /dev/null; then
-  echo "stop libvirt service first (run 'systemctl stop libvirtd')"
+# Since Fedora 35, there is no libvird service, but virtqemud.service,
+# virtlxcd.service and so on ...
+# see https://fedoraproject.org/wiki/Changes/LibvirtModularDaemons
+if [[ $DEBUG != echo ]] && systemctl is-active virtqemud.service > /dev/null; then
+  echo "stop virtqemud service first (run 'systemctl stop virtqemud')"
   exit 1
 fi
 
