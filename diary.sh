@@ -22,6 +22,8 @@ fi
 
 if [[ $# = 0 ]]; then
   D_FILE=$(date '+%F')
+elif [[ $1 = week ]]; then
+  D_FILE=$(date '+%G-week%V')
 else
   D_FILE=$(date '+%F' --date="$*")
 fi
