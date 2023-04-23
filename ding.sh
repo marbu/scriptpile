@@ -12,11 +12,11 @@ play_sound()
 {
   if ! type play >/dev/null; then
     echo "$(basename $0): can't play sound" >&2
-	return
+    return
   fi
   case $1 in
     0)   play -q /usr/share/sounds/Oxygen-Sys-App-Positive.ogg;;
-	127) play -q /usr/share/sounds/Oxygen-Sys-File-Open-Foes.ogg;;
+    127) play -q /usr/share/sounds/Oxygen-Sys-File-Open-Foes.ogg;;
     *)   play -q /usr/share/sounds/Oxygen-Sys-App-Error-Serious-Very.ogg;;
   esac
 }
