@@ -41,6 +41,10 @@ if mountpoint ${BACKUP_MOUNT_DIR}/ >/dev/null; then
   exit 1
 fi
 
+if ! mountpoint ${LOCAL_SNAPSHOT_DIR}/ >/dev/null; then
+  mount ${LOCAL_SNAPSHOT_DIR}
+fi
+
 #
 # Do the backup.
 #
@@ -94,9 +98,22 @@ ln -s "${SNAP_TS}" cur
 cd -
 echo "Updated 'cur' symlink from $PREV_CUR to $SNAP_TS"
 
-# umount the tartet dir, making sure data are there
+# if we can find id of the target snapshot dir, let's update it's cur-id link
+# in the local snapshot dir
+BSD_ID_FILE=${BACKUP_SNAPSHOT_DIR}/.id
+if [[ -e ${BSD_ID_FILE} ]]; then
+  BSD_ID=$(cat ${BSD_ID_FILE})
+  cd ${LOCAL_SNAPSHOT_DIR}
+  rm -f cur-${BSD_ID}
+  ln -s "${SNAP_TS}" cur-${BSD_ID}
+  cd -
+fi
+
+# umount the tartet dir (making sure data are there) and the local snapshot
+# volume (we no longer need it available)
 sync
-umount ${BACKUP_MOUNT_DIR}/
+umount ${BACKUP_MOUNT_DIR}
+umount ${LOCAL_SNAPSHOT_DIR}
 
 # show user friendly final message
 echo "Backup completed with success"
