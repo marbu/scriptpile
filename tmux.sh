@@ -2,4 +2,4 @@
 # tmux wrapper with systemd integration, see:
 # - https://github.com/tmux/tmux/issues/428
 # - https://unix.stackexchange.com/questions/490267
-exec systemd-run --scope --user /usr/bin/tmux "$@"
+exec systemd-run --quiet --scope --user /usr/bin/tmux "$@"
