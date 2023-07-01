@@ -84,11 +84,11 @@ done
 
 if [[ -z "${PREV_SNAP}" ]]; then
   echo "No local snapshot has been previously backed up on the backup device."
-  exit 1
+  btrfs send "${SNAP_HOME}" | btrfs receive ${BACKUP_SNAPSHOT_DIR}
+else
+  # run the backup via send/receive
+  btrfs send -p "${PREV_SNAP}" "${SNAP_HOME}" | btrfs receive ${BACKUP_SNAPSHOT_DIR}
 fi
-
-# run the backup via send/receive
-btrfs send -p "${PREV_SNAP}" "${SNAP_HOME}" | btrfs receive ${BACKUP_SNAPSHOT_DIR}
 
 # if all went well, let's update the current symlink on the target device
 cd ${BACKUP_SNAPSHOT_DIR}
