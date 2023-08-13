@@ -53,25 +53,38 @@ fi
 mkdir -p ${BACKUP_MOUNT_DIR}/
 mount ${BACKUP_DEV} -o rw ${BACKUP_MOUNT_DIR}/
 
-# create new local ro snapshot of /home in /mnt/dione_home_snapshots
-SNAP_TS=$(date '+%F-%T')
-SNAP_HOME=${LOCAL_SNAPSHOT_DIR}/${SNAP_TS}
-btrfs subvolume snapshot -r /home "${SNAP_HOME}"
-sync
+# check if we need to make a new local snapshot or just reuse the latest one
+if [[ $# = 1 && "$1" = "-r" ]]; then
+  REUSE=1
+fi
 
-# compute sha1 checksum of /home
-TMPSHA=$(mktemp)
-SHA_NAME=checksum.${SNAP_TS}.sha1
-cd "$SNAP_HOME"
-find . -type f -print0 | xargs -0 sha1sum > "$TMPSHA"
-cd -
+if [[ ${REUSE} ]]; then
+  # find the latest local snapshot
+  SNAP_TS=$(ls -I 'cur*' -t ${LOCAL_SNAPSHOT_DIR} | head -1)
+  SNAP_HOME=${LOCAL_SNAPSHOT_DIR}/${SNAP_TS}
+  echo "Reusing latest local home snapshot ${SNAP_HOME}"
+  btrfs subvolume show "${SNAP_HOME}"
+else
+  # create new local ro snapshot of /home in /mnt/dione_home_snapshots
+  SNAP_TS=$(date '+%F-%T')
+  SNAP_HOME=${LOCAL_SNAPSHOT_DIR}/${SNAP_TS}
+  btrfs subvolume snapshot -r /home "${SNAP_HOME}"
+  sync
 
-# copy the sha1 sum file back to original home volume and the local snapshot
-cp --archive "$TMPSHA" "/home/$SHA_NAME"
-btrfs property set -t subvol "${SNAP_HOME}" ro false
-cp --archive "$TMPSHA" "${SNAP_HOME}/$SHA_NAME"
-btrfs property set -t subvol "${SNAP_HOME}" ro true
-rm "$TMPSHA"
+  # compute sha1 checksum of /home
+  TMPSHA=$(mktemp)
+  SHA_NAME=checksum.${SNAP_TS}.sha1
+  cd "$SNAP_HOME"
+  find . -type f -print0 | xargs -0 sha1sum > "$TMPSHA"
+  cd -
+
+  # copy the sha1 sum file back to original home volume and the local snapshot
+  cp --archive "$TMPSHA" "/home/$SHA_NAME"
+  btrfs property set -t subvol "${SNAP_HOME}" ro false
+  cp --archive "$TMPSHA" "${SNAP_HOME}/$SHA_NAME"
+  btrfs property set -t subvol "${SNAP_HOME}" ro true
+  rm "$TMPSHA"
+fi
 
 # find the latest previous snapshot
 for SNAP in $(ls -t ${LOCAL_SNAPSHOT_DIR}); do
