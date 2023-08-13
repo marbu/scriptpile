@@ -74,7 +74,7 @@ btrfs property set -t subvol "${SNAP_HOME}" ro true
 rm "$TMPSHA"
 
 # find the latest previous snapshot
-for SNAP in $(ls -r ${LOCAL_SNAPSHOT_DIR}); do
+for SNAP in $(ls -t ${LOCAL_SNAPSHOT_DIR}); do
   if [[ -d "${BACKUP_SNAPSHOT_DIR}/${SNAP}" ]]; then
     # PREV_SNAP="/mnt/dione_home_snapshots/2022-08-13-23:05:42"
     PREV_SNAP="${LOCAL_SNAPSHOT_DIR}/${SNAP}"
