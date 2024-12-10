@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# hardcoded configuration, yeah
-WIKIDIR=~/tvorba/wiki
-NOTES=reading-notes/articles.page
 SCRIPTNAME=$(basename "$0")
+
+# defaults
+: "${WIKIDIR:=~/tvorba/wiki}"
+WIKIPAGE=reading-notes/articles.page
 
 show_help()
 {
@@ -11,27 +12,45 @@ show_help()
   echo "Usage: ${SCRIPTNAME} [-h] <url>"
   echo """
   url  creates new section for the given url, if needed
+  -p   name of the wiki page (using \"${WIKIPAGE%.page}\" if not specified)
   -g   grep mode, just search for given url
   -h   show help (this message)"""
 }
 
-cd "${WIKIDIR}" || { echo "${SCRIPTNAME}: WIKIDIR not found"; exit 1; }
+cd_wikidir()
+{
+  if ! cd "${WIKIDIR}"; then
+    echo "${SCRIPTNAME}: WIKIDIR not found" >&2
+    exit 1
+  fi
+}
 
-if [[ $1 = "-h" || $1 = "help" ]]; then
-  show_help
-  exit
-fi
+grep_notes()
+{
+  cd_wikidir
+  rg -n "$1" "${WIKIPAGE}"
+}
 
-if [[ $1 = "-g" ]]; then
-  shift
-  rg -n "$1" "${NOTES}"
-  exit
-fi
+init_notes()
+{
+  WIKIPAGE=$1
+  WIKINAME=$(basename "${1%.page}")
+  PAGEDIRNAME=$(dirname "$1")
+  mkdir -p "${PAGEDIRNAME}"
+  {
+    echo "---";
+    echo "format: org";
+    echo "categories: reading-notes";
+    echo "title: ${WIKINAME} Reading Notes";
+    echo "...";
+  } >> "${WIKIPAGE}"
+}
 
-if [[ $1 =~ ^http.* ]]; then
+find_url()
+{
   URL=$1
   # try to find the url in the notes first
-  MATCH=$(grep -n "${URL}" "${NOTES}")
+  MATCH=$(grep -n "${URL}" "${WIKIPAGE}")
   if [[ $? -eq 0 ]]; then
     MATCH_LINE=$(cut -d: -f1 <<< "${MATCH}")
   else
@@ -41,11 +60,51 @@ if [[ $1 =~ ^http.* ]]; then
       echo "* ${TITLE}";
       echo "- [[${URL}]]";
       echo "- added $(date -Idate)";
-    } >> "${NOTES}"
+    } >> "${WIKIPAGE}"
   fi
+}
+
+edit_notes()
+{
+  # open the file on the machined line, or at the end
+  vim +"${MATCH_LINE}" "${WIKIPAGE}"
+  git add "${WIKIPAGE}"
+  git commit -m "reading notes"
+}
+
+#
+# main
+#
+
+if [[ $1 = "help" ]]; then
+  show_help
+  exit
 fi
 
-# open the file on the machined line, or at the end
-vim +"${MATCH_LINE}" "${NOTES}"
-git add "${NOTES}"
-git commit -m "reading notes"
+while getopts "p:g:h" OPT; do
+  case $OPT in
+  g)  grep_notes "$OPTARG";
+      exit;;
+  p)  WIKIPAGE=${OPTARG}.page;;
+  h)  show_help;
+      exit;;
+  *)  echo;
+	  show_help;
+      exit 1;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+cd_wikidir
+
+# create wiki page for the notes if it doesn't exist
+if [[ ! -f "${WIKIPAGE}" ]]; then
+  init_notes "${WIKIPAGE}"
+fi
+
+if [[ $1 =~ ^http.* ]]; then
+  find_url "$1"
+fi
+
+edit_notes
