@@ -36,22 +36,30 @@ SYNTAX_TYPES = {
     "rst": "`{0} <{1}>`_"}
 
 
-def symlink_to_wiki(file_path):
+def symlink_to_wiki(file_path, preserve_basename=False):
     """
     Symlinkg given file and generate wiki path for linking.
     """
-    # compute sha256 digest
-    with open(file_path, "rb") as fo:
-        digest = hashlib.sha256(fo.read()).hexdigest()
-    _, ext = os.path.splitext(file_path)
-    link_name = digest + ext
-    wiki_path = os.path.join(WIKI_LINK_ROOT, link_name)
+    if not preserve_basename:
+        # compute sha256 digest
+        with open(file_path, "rb") as fo:
+            digest = hashlib.sha256(fo.read()).hexdigest()
+        _, ext = os.path.splitext(file_path)
+        link_name = digest + ext
+        wiki_path = os.path.join(WIKI_LINK_ROOT, link_name)
+    else:
+        link_name = os.path.basename(file_path)
+        wiki_path = os.path.join(WIKI_LINK_ROOT, link_name)
     # and symlink the file to wiki static dir
     real_path = os.path.realpath(file_path)
     try:
         os.symlink(real_path, os.path.join(WIKI_LINK_PATH, link_name))
     except FileExistsError:
-        pass
+        if preserve_basename:
+            print((
+                f"warning: file '{link_name}' has been already linked, "
+                "check for collisions!"),
+                file=sys.stderr)
     return wiki_path
 
 
@@ -88,6 +96,13 @@ def main():
         default="md",
         help="link syntax, md (markdown) is used if not specified")
     ap.add_argument(
+        "-p",
+        "--preserve-name",
+        action="store_true",
+        help=(
+            "preserve filename when symlinking, "
+            "use only with important and unique file names"))
+    ap.add_argument(
         "--url2path",
         action="store_true",
         help="translate wiki url to a file path (reverse operation)")
@@ -100,7 +115,7 @@ def main():
             if args.url2path:
                 print(get_file_path(file_path))
             else:
-                wiki_path = symlink_to_wiki(file_path)
+                wiki_path = symlink_to_wiki(file_path, args.preserve_name)
                 file_name = os.path.basename(file_path)
                 link_code = get_link(file_name, wiki_path, args.syntax)
                 print(link_code)
