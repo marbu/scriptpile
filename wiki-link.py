@@ -40,6 +40,10 @@ def symlink_to_wiki(file_path, preserve_basename=False):
     """
     Symlinkg given file and generate wiki path for linking.
     """
+    if file_path.startswith("file:///"):
+        # translate local file urls (when copy pasting from a browser)
+        result = urllib.parse.urlparse(file_path)
+        file_path = result.path
     if not preserve_basename:
         # compute sha256 digest
         with open(file_path, "rb") as fo:
