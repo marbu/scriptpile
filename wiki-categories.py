@@ -15,15 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Queries to cover:
-#  - tag* -> pages
-#  - page* -> tags
-#  - list all tags, incl. number (opt.)
-#
-# TODO: implement the full scope of the queries:
-#  - multiple pages or categories (intersection)
-#  - numbers of pages or categories for a list
-#  - address code repetition in main
 
 from collections import defaultdict
 import argparse
@@ -82,59 +73,105 @@ def build_index():
     return cat_index, page_index
 
 
+def query_index(query_item, index, page_mode):
+    """
+    Query the index for given query item.
+    """
+    if page_mode:
+        if not query_item.endswith(".page"):
+            query_item = query_item + ".page"
+    items = index.get(query_item)
+    return items
+
+
+def compute_answer(query_list, index, page_mode, intersect_mode):
+    """
+    Compute the answer for a query (list of categories or pages).
+    """
+    answer = []
+    # initialize answer for intersection mode
+    if intersect_mode:
+        answer = query_index(query_list[0], index, page_mode)
+    # update the the answer for each item in the query list
+    for query_item in query_list:
+        items = query_index(query_item, index, page_mode)
+        if items is None:
+            if intersect_mode:
+                return []
+            else:
+                continue
+        if intersect_mode:
+            answer = [i for i in answer if i in items]
+        else:
+            answer.extend(items)
+    return answer
+
+
 def main():
-    ap = argparse.ArgumentParser(description="wiki categories helper script")
+    ap = argparse.ArgumentParser(
+        description="wiki-categories: list pages for given categories and vice versa")
     ap.add_argument(
-        "-c",
-        dest="category",
-        help="list pages for given categories")
+        dest="categories",
+        nargs="*",
+        help="list of categories")
     ap.add_argument(
         "-p",
-        dest="page",
-        help="show categories with given categories")
+        dest="pages",
+        action='store_true',
+        help="inverse mode (list categories for given pages instead)")
     ap.add_argument(
-        "-a",
-        "--all",
+        "-i",
+        "--intersect",
+        action="store_true",
+        help="use intersection to get answer for multiple categories/pages")
+    ap.add_argument(
+        "-l",
+        "--list",
         action="store_true",
         help="list all categories")
+    ap.add_argument(
+        "-s",
+        "--sort",
+        action="store_true",
+        help="sort result by number of pages/categories if possible")
     ap.add_argument(
         "-d",
         "--debug",
         action="store_true",
-        help="just dump index dictionaries")
+        help="dump index dictionaries and exit")
     args = ap.parse_args()
 
     cat_index, page_index = build_index()
 
+    # debugging mode
     if args.debug:
         pprint.pprint(cat_index)
         pprint.pprint(page_index)
         return
 
-    if args.all:
-        for cat in cat_index.keys():
-            print(cat)
-        return
-
-    if args.page:
-        if not args.page.endswith(".page"):
-            page = args.page + ".page"
+    # listing mode
+    if args.list:
+        if args.sort:
+            for cat, pages in sorted(cat_index.items(), key=lambda i: len(i[1]), reverse=True):
+                num = len(pages)
+                print("{0}\t{1}".format(num, cat))
         else:
-            page = args.page
-        answer = page_index.get(page)
-        if answer is None:
-            return 1
-        for cat in answer:
-            print(cat)
+            for cat in cat_index.keys():
+                print(cat)
         return
 
-    if args.category:
-        answer = cat_index.get(args.category)
-        if answer is None:
-            return 1
-        for page in answer:
-            print(page)
-        return
+    # select which index to use
+    if args.pages:
+        index = page_index
+    else:
+        index = cat_index
+
+    # get and print answer for the query
+    answer = compute_answer(args.categories, index, args.pages, args.intersect)
+    if len(answer) == 0:
+        return 1
+    for item in answer:
+        print(item)
 
 
 if __name__ == '__main__':
