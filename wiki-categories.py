@@ -63,7 +63,7 @@ def build_index():
     page_index = {}
     for page_path in iterate_pages():
         page_wiki_path = page_path[len(WIKI_DIR)+1:]
-        with open(page_path, "r") as page_fo:
+        with open(page_path, "r", encoding="utf-8") as page_fo:
             categories = get_categories(page_fo)
             if len(categories) == 0:
                 continue
@@ -147,18 +147,18 @@ def main():
     if args.debug:
         pprint.pprint(cat_index)
         pprint.pprint(page_index)
-        return
+        return 0
 
     # listing mode
     if args.list:
         if args.sort:
             for cat, pages in sorted(cat_index.items(), key=lambda i: len(i[1]), reverse=True):
                 num = len(pages)
-                print("{0}\t{1}".format(num, cat))
+                print(f"{num}\t{cat}")
         else:
             for cat in cat_index.keys():
                 print(cat)
-        return
+        return 0
 
     # select which index to use
     if args.pages:
@@ -172,6 +172,7 @@ def main():
         return 1
     for item in answer:
         print(item)
+    return 0
 
 
 if __name__ == '__main__':
