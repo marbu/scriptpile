@@ -24,6 +24,7 @@ import sys
 
 
 WIKI_DIR = "/home/martin/tvorba/wiki"  # TODO: move to config file
+WIKI_URL = "http://localhost:12345"
 
 
 def iterate_pages():
@@ -107,6 +108,32 @@ def compute_answer(query_list, index, page_mode, intersect_mode):
     return answer
 
 
+def translate_page_input(page_list, page_ref_mode):
+    """
+    Translate list of page references from given page ref mode to wikipath
+    form.
+    """
+    if page_ref_mode == "realpath":
+        prefix_cut = len(WIKI_DIR) + 1
+    elif page_ref_mode == "url":
+        prefix_cut = len(WIKI_URL) + 1
+    return [i[prefix_cut:] for i in page_list]
+
+
+def translate_page_output(page_list, page_ref_mode):
+    """
+    Translate list of page references from wikipath form to given page ref
+    mode.
+    """
+    result = []
+    for page in page_list:
+        if page_ref_mode == "realpath":
+            result.append(os.path.join(WIKI_DIR, page))
+        elif page_ref_mode == "url":
+            result.append(os.path.join(WIKI_URL, page)[:-5])
+    return result
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="wiki-categories: list pages for given categories and vice versa")
@@ -119,6 +146,12 @@ def main():
         dest="pages",
         action='store_true',
         help="inverse mode (list categories for given pages instead)")
+    ap.add_argument(
+        "-r",
+        dest="page_ref",
+        choices=["wikipath", "realpath", "url"],
+        default=["wikipath"],
+        help="controls how a wiki pages are referenced (wiki-path is default)")
     ap.add_argument(
         "-i",
         "--intersect",
@@ -166,10 +199,19 @@ def main():
     else:
         index = cat_index
 
+    # translate query to wikipath page references
+    query_list = args.categories
+    if args.pages and args.page_ref != "wikipath":
+        query_list = translate_page_input(args.categories, args.page_ref)
+
     # get and print answer for the query
-    answer = compute_answer(args.categories, index, args.pages, args.intersect)
+    answer = compute_answer(query_list, index, args.pages, args.intersect)
     if len(answer) == 0:
         return 1
+    # when quering categories (not pages), we will report pages and so
+    # need to tweak the way to report them
+    if not args.pages:
+        answer = translate_page_output(answer, args.page_ref)
     for item in answer:
         print(item)
     return 0
