@@ -153,10 +153,10 @@ def main():
         default="wikipath",
         help="controls how a wiki pages are referenced (wiki-path is default)")
     ap.add_argument(
-        "-i",
-        "--intersect",
+        "-u",
+        "--union",
         action="store_true",
-        help="use intersection to get answer for multiple categories/pages")
+        help="use union to get answer for multiple categories/pages")
     ap.add_argument(
         "-l",
         "--list",
@@ -205,7 +205,7 @@ def main():
         query_list = translate_page_input(args.categories, args.page_ref)
 
     # get and print answer for the query
-    answer = compute_answer(query_list, index, args.pages, args.intersect)
+    answer = compute_answer(query_list, index, args.pages, not args.union)
     if len(answer) == 0:
         return 1
     # when quering categories (not pages), we will report pages and so
