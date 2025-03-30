@@ -150,7 +150,7 @@ def main():
         "-r",
         dest="page_ref",
         choices=["wikipath", "realpath", "url"],
-        default=["wikipath"],
+        default="wikipath",
         help="controls how a wiki pages are referenced (wiki-path is default)")
     ap.add_argument(
         "-i",
@@ -210,7 +210,7 @@ def main():
         return 1
     # when quering categories (not pages), we will report pages and so
     # need to tweak the way to report them
-    if not args.pages:
+    if not args.pages and args.page_ref != "wikipath":
         answer = translate_page_output(answer, args.page_ref)
     for item in answer:
         print(item)
