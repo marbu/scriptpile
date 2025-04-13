@@ -183,7 +183,7 @@ def main():
         return 0
 
     # listing mode
-    if args.list:
+    if args.list or len(args.categories) == 0:
         if args.sort:
             for cat, pages in sorted(cat_index.items(), key=lambda i: len(i[1]), reverse=True):
                 num = len(pages)
