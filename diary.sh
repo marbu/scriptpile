@@ -36,4 +36,4 @@ DPATH=${D_DIR}/${D_FILE}.md
 if [[ ! -s "${DPATH}" ]]; then
   echo -e "## ${D_FILE}\n\n" > "${DPATH}"
 fi
-vim "${DPATH}"
+nvim "${DPATH}"

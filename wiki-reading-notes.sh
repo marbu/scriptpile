@@ -67,7 +67,7 @@ find_url()
 edit_notes()
 {
   # open the file on the machined line, or at the end
-  vim +"${MATCH_LINE}" "${WIKIPAGE}"
+  nvim +"${MATCH_LINE}" "${WIKIPAGE}"
   git add "${WIKIPAGE}"
   git commit -m "reading notes"
 }

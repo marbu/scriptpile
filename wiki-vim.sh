@@ -11,7 +11,7 @@ fi
 
 if [[ "$1" == "$WIKIURL"* ]]; then
   PAGEURL=${1%#*}
-  vim "${WIKIDIR}/${PAGEURL#$WIKIURL}.page"
+  nvim "${WIKIDIR}/${PAGEURL#$WIKIURL}.page"
 else
   echo "error: \"$1\" is not a valid wikipage url"
   exit 1
