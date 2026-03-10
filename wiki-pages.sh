@@ -7,4 +7,4 @@ if [[ $(pwd) == $(realpath "$WIKIDIR")* ]]; then
   WIKIDIR="."
 fi
 
-find "${WIKIDIR}" -type f | grep "$1"
+find "${WIKIDIR}" -type f -name '*.page' | grep "$1"
