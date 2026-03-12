@@ -7,8 +7,8 @@
 #
 # By martinb@marbu.eu, Apache License 2.0, 2022
 
-set -ex
-
+# name of this script
+SCRIPTNAME=$(basename "$0")
 # target btrfs device where the backup is saved
 BACKUP_DEV=/dev/mapper/saturn_backup
 BACKUP_MOUNT_DIR=/mnt/saturn_backup
@@ -16,6 +16,43 @@ BACKUP_MOUNT_DIR=/mnt/saturn_backup
 BACKUP_SNAPSHOT_DIR=${BACKUP_MOUNT_DIR}/dione_home_snapshots
 # subvolume on the local machine with the snapshots
 LOCAL_SNAPSHOT_DIR=/mnt/dione_home_snapshots
+
+show_help()
+{
+  echo "Backup /home volume using btrfs snapshots and send/receive."
+  echo
+  echo "Usage: ${SCRIPTNAME} [options]"
+  echo
+  echo "Options:"
+  echo "  -r   reuse previous subvolume snapshot instead of creating a new one"
+  echo "  -q   quick mode (don't compute checksums, don't start scrub)"
+  echo "  -s   create local btrfs snapshot only (don't run actuall backup)"
+  echo "  -h   show help (this message)"
+}
+
+#
+# Main
+#
+
+unset QUICK
+unset REUSE
+unset SNAP_ONLY
+
+while getopts "rqsh" OPT; do
+  case $OPT in
+  r)  REUSE=1;;
+  q)  QUICK=1;;
+  s)  SNAP_ONLY=1;;
+  h)  show_help;
+      exit;;
+  *)  echo;
+      show_help;
+      exit 1;;
+  esac
+done
+
+shift $((OPTIND-1))
+set -ex
 
 #
 # Check assumptions for the backup.
@@ -41,21 +78,12 @@ if mountpoint ${BACKUP_MOUNT_DIR}/ >/dev/null; then
   exit 1
 fi
 
+#
+# Prepare local snapshot (source of the backup)
+#
+
 if ! mountpoint ${LOCAL_SNAPSHOT_DIR}/ >/dev/null; then
   mount ${LOCAL_SNAPSHOT_DIR}
-fi
-
-#
-# Do the backup.
-#
-
-# mount target dir (where the backup will be stored)
-mkdir -p ${BACKUP_MOUNT_DIR}/
-mount ${BACKUP_DEV} -o rw ${BACKUP_MOUNT_DIR}/
-
-# check if we need to make a new local snapshot or just reuse the latest one
-if [[ $# = 1 && "$1" = "-r" ]]; then
-  REUSE=1
 fi
 
 if [[ ${REUSE} ]]; then
@@ -70,21 +98,36 @@ else
   SNAP_HOME=${LOCAL_SNAPSHOT_DIR}/${SNAP_TS}
   btrfs subvolume snapshot -r /home "${SNAP_HOME}"
   sync
+  if [[ ! ${QUICK} ]]; then
+    # compute sha1 checksum of /home
+    TMPSHA=$(mktemp)
+    SHA_NAME=checksum.${SNAP_TS}.sha1
+    cd "$SNAP_HOME"
+    find . -type f -print0 | xargs -0 sha1sum > "$TMPSHA"
+    cd -
 
-  # compute sha1 checksum of /home
-  TMPSHA=$(mktemp)
-  SHA_NAME=checksum.${SNAP_TS}.sha1
-  cd "$SNAP_HOME"
-  find . -type f -print0 | xargs -0 sha1sum > "$TMPSHA"
-  cd -
-
-  # copy the sha1 sum file back to original home volume and the local snapshot
-  cp --archive "$TMPSHA" "/home/$SHA_NAME"
-  btrfs property set -t subvol "${SNAP_HOME}" ro false
-  cp --archive "$TMPSHA" "${SNAP_HOME}/$SHA_NAME"
-  btrfs property set -t subvol "${SNAP_HOME}" ro true
-  rm "$TMPSHA"
+    # copy the sha1 sum file back to original home volume and the local snapshot
+    cp --archive "$TMPSHA" "/home/$SHA_NAME"
+    btrfs property set -t subvol "${SNAP_HOME}" ro false
+    cp --archive "$TMPSHA" "${SNAP_HOME}/$SHA_NAME"
+    btrfs property set -t subvol "${SNAP_HOME}" ro true
+    rm "$TMPSHA"
+  fi
 fi
+
+if [[ ${SNAP_ONLY} ]]; then
+  umount ${LOCAL_SNAPSHOT_DIR}
+  echo "Snapshot created, exiting before running backup."
+  exit
+fi
+
+#
+# Do the backup.
+#
+
+# mount target dir (where the backup will be stored)
+mkdir -p ${BACKUP_MOUNT_DIR}/
+mount ${BACKUP_DEV} -o rw ${BACKUP_MOUNT_DIR}/
 
 # find the latest previous snapshot
 for SNAP in $(ls -t ${LOCAL_SNAPSHOT_DIR}); do
@@ -116,9 +159,9 @@ echo "Updated 'cur' symlink from $PREV_CUR to $SNAP_TS"
 BSD_ID_FILE=${BACKUP_SNAPSHOT_DIR}/.id
 if [[ -e ${BSD_ID_FILE} ]]; then
   BSD_ID=$(cat ${BSD_ID_FILE})
-  cd ${LOCAL_SNAPSHOT_DIR}
-  rm -f cur-${BSD_ID}
-  ln -s "${SNAP_TS}" cur-${BSD_ID}
+  cd "${LOCAL_SNAPSHOT_DIR}"
+  rm -f "cur-${BSD_ID}"
+  ln -s "${SNAP_TS}" "cur-${BSD_ID}"
   cd -
 fi
 
@@ -131,7 +174,9 @@ umount ${LOCAL_SNAPSHOT_DIR}
 # show user friendly final message
 echo "Backup completed with success"
 
-echo "And now ... scrub"
-mount ${BACKUP_DEV} -o rw ${BACKUP_MOUNT_DIR}/
-btrfs scrub status ${BACKUP_MOUNT_DIR}/
-btrfs scrub start  ${BACKUP_MOUNT_DIR}/
+if [[ ! ${QUICK} ]]; then
+  echo "And now ... scrub"
+  mount ${BACKUP_DEV} -o rw ${BACKUP_MOUNT_DIR}/
+  btrfs scrub status ${BACKUP_MOUNT_DIR}/
+  btrfs scrub start  ${BACKUP_MOUNT_DIR}/
+fi
