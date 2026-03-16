@@ -24,6 +24,7 @@ show_help()
   echo "Usage: ${SCRIPTNAME} [options]"
   echo
   echo "Options:"
+  echo "  -b   target backup device (if unspecified, ${BACKUP_DEV} is used)"
   echo "  -r   reuse previous subvolume snapshot instead of creating a new one"
   echo "  -q   quick mode (don't compute checksums, don't start scrub)"
   echo "  -s   create local btrfs snapshot only (don't run actuall backup)"
@@ -38,8 +39,9 @@ unset QUICK
 unset REUSE
 unset SNAP_ONLY
 
-while getopts "rqsh" OPT; do
+while getopts "b:rqsh" OPT; do
   case $OPT in
+  b)  BACKUP_DEV="$OPTARG";;
   r)  REUSE=1;;
   q)  QUICK=1;;
   s)  SNAP_ONLY=1;;
