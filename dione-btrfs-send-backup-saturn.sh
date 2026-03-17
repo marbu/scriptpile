@@ -66,7 +66,9 @@ if [[ $(lsof /home 2>/dev/null | wc -l) -ne 0 ]]; then
   exit 1
 fi
 
-if umount /home; then
+if ! mountpoint /home; then
+  mount /home
+elif umount /home; then
   mount /home
 else
   echo "Home volume can't be remounted (see the error above)."

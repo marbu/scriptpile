@@ -1,0 +1,13 @@
+[Unit]
+Description=Run local backup (if target device is present) during shutdown
+DefaultDependencies=no
+Before=shutdown.target
+Before=home.mount
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/dione-btrfs-shutdown-backup.sh
+TimeoutStartSec=0
+
+[Install]
+WantedBy=shutdown.target
