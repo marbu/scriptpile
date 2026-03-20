@@ -52,7 +52,7 @@ if [[ $# = 0 ]]; then
 fi
 
 unset DEBUG
-unset VERBOSE
+unset TRACE
 
 while getopts "dxh" OPT; do
   case $OPT in
