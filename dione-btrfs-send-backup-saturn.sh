@@ -131,7 +131,7 @@ fi
 
 # mount target dir (where the backup will be stored)
 mkdir -p ${BACKUP_MOUNT_DIR}/
-mount ${BACKUP_DEV} -o rw ${BACKUP_MOUNT_DIR}/
+mount "${BACKUP_DEV}" -o rw ${BACKUP_MOUNT_DIR}/
 
 # find the latest previous snapshot
 for SNAP in $(ls -t ${LOCAL_SNAPSHOT_DIR}); do
@@ -180,7 +180,7 @@ echo "Backup completed with success"
 
 if [[ ! ${QUICK} ]]; then
   echo "And now ... scrub"
-  mount ${BACKUP_DEV} -o rw ${BACKUP_MOUNT_DIR}/
+  mount "${BACKUP_DEV}" -o rw ${BACKUP_MOUNT_DIR}/
   btrfs scrub status ${BACKUP_MOUNT_DIR}/
   btrfs scrub start  ${BACKUP_MOUNT_DIR}/
 fi
