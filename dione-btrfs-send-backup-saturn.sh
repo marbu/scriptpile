@@ -92,7 +92,7 @@ fi
 
 if [[ ${REUSE} ]]; then
   # find the latest local snapshot
-  SNAP_TS=$(ls -I 'cur*' -t ${LOCAL_SNAPSHOT_DIR} | head -1)
+  SNAP_TS=$(ls -I 'cur*' -r "${LOCAL_SNAPSHOT_DIR}" | head -1)
   SNAP_HOME=${LOCAL_SNAPSHOT_DIR}/${SNAP_TS}
   echo "Reusing latest local home snapshot ${SNAP_HOME}"
   btrfs subvolume show "${SNAP_HOME}"
@@ -134,7 +134,7 @@ mkdir -p ${BACKUP_MOUNT_DIR}/
 mount "${BACKUP_DEV}" -o rw ${BACKUP_MOUNT_DIR}/
 
 # find the latest previous snapshot
-for SNAP in $(ls -t ${LOCAL_SNAPSHOT_DIR}); do
+for SNAP in $(ls -I 'cur*' -r "${LOCAL_SNAPSHOT_DIR}"); do
   if [[ -d "${BACKUP_SNAPSHOT_DIR}/${SNAP}" ]]; then
     # PREV_SNAP="/mnt/dione_home_snapshots/2022-08-13-23:05:42"
     PREV_SNAP="${LOCAL_SNAPSHOT_DIR}/${SNAP}"
