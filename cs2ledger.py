@@ -2,14 +2,20 @@
 # -*- coding: utf8 -*-
 
 
+"""
+Extract hledger cli transactions from given CS report text data
+from CS pdf report.
+"""
+
+
 from datetime import datetime
 import argparse
-import pprint
 import sys
 import textwrap
 
 
 def seek_to(fo, exp):
+    """In given file, seek to a like with given expression."""
     for line in fo:
         if line == exp:
             return True
@@ -17,6 +23,7 @@ def seek_to(fo, exp):
 
 
 def read_data(fo):
+    """Read lines from given file into a list of strings."""
     result = []
     for line in fo:
         if len(line) > 1:
@@ -27,21 +34,29 @@ def read_data(fo):
 
 
 def cut_zero(str_val):
+    """Drop ending zeros from given string"""
     if not str_val.endswith("0"):
         return str_val
     fl_val = float(str_val)
     if f"{fl_val:.2f}" == str_val[:-1]:
         return str_val[:-1]
-    else:
-        return str_val
+    return str_val
 
 
 class Report():
+    """
+    CS Report Base Class.
+    """
 
     def make_transaction(self, date, i):
-        pass
+        """
+        Create ledger cli transaction.
+        """
 
     def ledger_export(self):
+        """
+        Export the report into list of ledger cli encoded transactions.
+        """
         transactions = []
         for i, date_raw in enumerate(self.transact_date):
             date_obj = datetime.strptime(date_raw, "%d %b %Y")
@@ -51,6 +66,7 @@ class Report():
         return "\n".join(transactions)
 
     def is_valid(self):
+        """Minimal validation of a report structure."""
         exp_len = len(self.transact_date)
         result = True
         for var in vars(self).keys():
@@ -62,9 +78,10 @@ class Report():
         return result
 
     def dump(self):
+        """Debugging dump of the report."""
         result = []
         for var in vars(self).keys():
-            result.append(f"{var:<18}: " + str(getattr(self,var)))
+            result.append(f"{var:<18}: " + str(getattr(self, var)))
         return "\n".join(result)
 
 
@@ -136,6 +153,9 @@ class DSPPReport(Report):
 
 
 def extract_data(fo):
+    """
+    Seek to a report header in given file, and create proper Report instance.
+    """
     if seek_to(fo, ESPPReport.header):
         return ESPPReport(fo)
     fo.seek(0)
@@ -154,21 +174,21 @@ if __name__ == '__main__':
     ap.add_argument("-d", "--debug", action="store_true", help="debug mode")
     args = ap.parse_args()
 
-    for fo in args.file:
+    for file_o in args.file:
         # get the data from plaintext export
-        report = extract_data(fo)
+        report = extract_data(file_o)
         if report is None:
-            print(f"error: file '{fo.name}' not recognized, skipping",
+            print(f"error: file '{file_o.name}' not recognized, skipping",
                   file=sys.stderr)
             continue
         # optional debugging
         if args.debug:
-            print("file:", fo.name)
+            print("file:", file_o.name)
             print("type:", report.header)
             print(report.dump())
         # mandatory validation
         if not report.is_valid():
-            print(f"error: file '{fo.name}' is not valid, can't continue",
+            print(f"error: file '{file_o.name}' is not valid, can't continue",
                   file=sys.stderr)
             sys.exit(1)
         # translating data from the report into ledger format
